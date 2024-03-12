@@ -46,7 +46,8 @@ def benchmark(ffmpeg_cmd: str) -> tuple[list, dict[str, Any]]:
 
     with click.progressbar(
         length=0,
-        label="Workers: 1,Speed: 0.0") as progress_bar:
+        label="Workers: 1,Speed: 0.0"
+    ) as progress_bar:
         while run:
             output = worker.workMan(total_workers, ffmpeg_cmd)
             # First check if we continue Running:
@@ -64,11 +65,10 @@ def benchmark(ffmpeg_cmd: str) -> tuple[list, dict[str, Any]]:
                 total_workers += 60
                 last_Speed = output[1]["speed"]
                 # break up long strings like this.
-                label_value = (
+                progress_bar.label = (
                     f"Workers: {total_workers}"
                     ", Speed: {last_Speed}"
                 )
-                progress_bar.label = 
             progress_bar.update(1)
         progress_bar.update(1)
 
