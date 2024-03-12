@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "pytab"
+version = "0.1.0"
+description = "Python Transcoding Acceleration Benchmark - Client for Jellyfin Hardware Survey"
+authors = ["BotBlake <B0TBlake@protonmail.com>"]
+license = "GPL-3.0-or-later"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+click = "^8.1.7"
+
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.22.2"
+ruff = "^0.3.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+pytab = 'pytab.core:main'

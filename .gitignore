@@ -1,0 +1,9 @@
+#Ignoring temp-files used by the tool
+/videos/*
+/ffmpeg/*
+
+#Python Cache
+*pyc
+
+#Poetry builds
+/dist/*
