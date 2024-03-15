@@ -29,6 +29,8 @@ placebo_cmd = [
     "h264",
     "-i",
     "./videos/jellyfish-40-mbps-hd-h264.mkv",
+    "-c:v",
+    "h264",
     "-benchmark",
     "-f",
     "null",
