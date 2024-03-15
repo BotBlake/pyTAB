@@ -66,14 +66,16 @@ def benchmark(ffmpeg_cmd):
                 progress_bar.label = f"Workers: {total_workers}, Speed: {last_Speed}"
             progress_bar.update(1)
         progress_bar.update(1)
-
-    result = {
-        "max_streams" : runs[(len(runs))-1]["workers"],
-        "failure_reasons" : failure_reason,
-        "single_worker_speed" : runs[(len(runs))-1]["speed"],
-        "single_worker_rss_kb" : runs[(len(runs))-1]["rss_kb"],
-    }
-    return runs, result
+    if len(runs) > 0:
+        result = {
+            "max_streams" : runs[(len(runs))-1]["workers"],
+            "failure_reasons" : failure_reason,
+            "single_worker_speed" : runs[(len(runs))-1]["speed"],
+            "single_worker_rss_kb" : runs[(len(runs))-1]["rss_kb"],
+        }
+        return True, runs, result
+    else:
+        return False, runs, {}
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=120)
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
@@ -111,7 +113,7 @@ def cli(ffmpeg_path,video_path, debug_flag):
     global debug
     debug = debug_flag
 
-    runs, result = benchmark(placebo_cmd)
+    valid, runs, result = benchmark(placebo_cmd)
     print()
     print("------------DEV-OUT--------------------------------------------------------------------------------")
     print(runs)
