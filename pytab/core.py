@@ -116,7 +116,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     default=False,
     help="Enable additional debug output",
 )
-def cli(ffmpeg_path, video_path, debug_flag):
+def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
     """
     Python Transcoding Acceleration Benchmark Client made for Jellyfin Hardware Survey
     """
@@ -127,13 +127,13 @@ def cli(ffmpeg_path, video_path, debug_flag):
     valid, runs, result = benchmark(placebo_cmd)
     print()
     print(
-        "------------DEV-OUT--------------------------------------------------------------------------------"
+        ("-"*15)+"DEV-OUT"+("-"*40)
     )
     print(runs)
-    print("-------------------------------------------------")
+    print("-"*20)
     print(result)
     print(
-        "------------DEV-END--------------------------------------------------------------------------------"
+        ("-"*15)+"DEV-END"+("-"*40)
     )
 
 
