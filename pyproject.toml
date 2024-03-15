@@ -9,6 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 click = "^8.1.7"
+requests = "^2.31.0"
 
 
 [tool.poetry.group.dev.dependencies]
