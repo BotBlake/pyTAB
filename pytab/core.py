@@ -20,7 +20,7 @@
 
 import click
 from pytab import worker
-#from pytab import api
+# from pytab import api
 
 placebo_cmd = [
     "./ffmpeg/ffmpeg.exe",
@@ -43,7 +43,7 @@ def benchmark(ffmpeg_cmd):
     runs = []
     total_workers = 1
     run = True
-    last_Speed = -0.5 #to Assure first worker always has the required difference 
+    last_Speed = -0.5  # to Assure first worker always has the required difference
     failure_reason = []
 
     with click.progressbar(length=0, label="Workers: 1, Speed: 0.0") as progress_bar:
@@ -56,10 +56,10 @@ def benchmark(ffmpeg_cmd):
             elif output[1]["speed"] < 1:
                 run = False
                 failure_reason.append("performance")
-            #elif output[1]["speed"]-last_Speed < 0.5:
+            # elif output[1]["speed"]-last_Speed < 0.5:
             #    run = False
             #    failure_reason.append("failed_inconclusive")
-            else: # When no failure happened 
+            else:  # When no failure happened
                 runs.append(output[1])
                 total_workers += 60
                 last_Speed = output[1]["speed"]
@@ -68,44 +68,55 @@ def benchmark(ffmpeg_cmd):
         progress_bar.update(1)
     if len(runs) > 0:
         result = {
-            "max_streams" : runs[(len(runs))-1]["workers"],
-            "failure_reasons" : failure_reason,
-            "single_worker_speed" : runs[(len(runs))-1]["speed"],
-            "single_worker_rss_kb" : runs[(len(runs))-1]["rss_kb"],
+            "max_streams": runs[(len(runs)) - 1]["workers"],
+            "failure_reasons": failure_reason,
+            "single_worker_speed": runs[(len(runs)) - 1]["speed"],
+            "single_worker_rss_kb": runs[(len(runs)) - 1]["rss_kb"],
         }
         return True, runs, result
     else:
         return False, runs, {}
+
+
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=120)
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
-        "--ffmpeg",
-        "ffmpeg_path",
-        type=click.Path(resolve_path=True ,dir_okay=True, exists=True, writable=True, executable=True),
-        default="./ffmpeg",
-        show_default=True,
-        required=False,
-        help="Path for JellyfinFFMPEG Download/execution"
+    "--ffmpeg",
+    "ffmpeg_path",
+    type=click.Path(
+        resolve_path=True, dir_okay=True, exists=True, writable=True, executable=True
+    ),
+    default="./ffmpeg",
+    show_default=True,
+    required=False,
+    help="Path for JellyfinFFMPEG Download/execution",
 )
 @click.option(
-        "--videos",
-        "video_path",
-        type=click.Path(resolve_path=True ,dir_okay=True, exists=True, writable=True, readable=True, executable=False),
-        default="./ffmpeg",
-        show_default=True,
-        required=False,
-        help="Path for JellyfinFFMPEG Download/execution"
+    "--videos",
+    "video_path",
+    type=click.Path(
+        resolve_path=True,
+        dir_okay=True,
+        exists=True,
+        writable=True,
+        readable=True,
+        executable=False,
+    ),
+    default="./ffmpeg",
+    show_default=True,
+    required=False,
+    help="Path for JellyfinFFMPEG Download/execution",
 )
-
 @click.option(
-        "--debug",
-        "debug_flag",
-        is_flag=True,
-        default=False,
-        help="Enable additional debug output"
+    "--debug",
+    "debug_flag",
+    is_flag=True,
+    default=False,
+    help="Enable additional debug output",
 )
-
-def cli(ffmpeg_path,video_path, debug_flag):
+def cli(ffmpeg_path, video_path, debug_flag):
     """
     Python Transcoding Acceleration Benchmark Client made for Jellyfin Hardware Survey
     """
@@ -115,14 +126,20 @@ def cli(ffmpeg_path,video_path, debug_flag):
 
     valid, runs, result = benchmark(placebo_cmd)
     print()
-    print("------------DEV-OUT--------------------------------------------------------------------------------")
+    print(
+        "------------DEV-OUT--------------------------------------------------------------------------------"
+    )
     print(runs)
     print("-------------------------------------------------")
     print(result)
-    print("------------DEV-END--------------------------------------------------------------------------------")
+    print(
+        "------------DEV-END--------------------------------------------------------------------------------"
+    )
+
 
 def main():
     return cli(obj={})
+
 
 if __name__ == "__main__":
     cli()
