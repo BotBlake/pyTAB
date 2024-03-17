@@ -29,9 +29,9 @@ placebo_cmd = [
     "-c:v",
     "h264",
     "-i",
-    "./videos/jellyfish-40-mbps-hd-h264.mkv",
+    "./videos/nvidia_s.mp4",
     "-c:v",
-    "h264",
+    "h264_nvenc",
     "-benchmark",
     "-f",
     "null",
@@ -83,7 +83,7 @@ def obtainSource(target_path: str, source_url: str, source_sha256: str) -> None:
 def benchmark(ffmpeg_cmd):
     print("Benchmarking now...")
     runs = []
-    total_workers = 1
+    total_workers = 9
     run = True
     last_Speed = -0.5  # to Assure first worker always has the required difference
     failure_reason = []
