@@ -103,7 +103,7 @@ def benchmark(ffmpeg_cmd):
             #    failure_reason.append("failed_inconclusive")
             else:  # When no failure happened
                 runs.append(output[1])
-                total_workers += 60
+                total_workers += 1
                 last_Speed = output[1]["speed"]
                 progress_bar.label = f"Workers: {total_workers}, Speed: {last_Speed}"
             progress_bar.update(1)
