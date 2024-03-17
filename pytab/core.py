@@ -167,9 +167,14 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
 
     platforms = api.getPlatform()  # obtain list of (supported) Platforms + ID's
     platformID = hwi.MatchID(platforms, 0)  # dummy: return = platforms[x]["id"]
-    Tests = api.getTestData(platformID)
-    if Tests:
-        click.echo("Tests loaded")
+    valid, server_data = api.getTestData(platformID)
+    if not valid:
+        click.echo(f"Cancled: {server_data}")
+
+    #Downloading ffmpeg:
+    
+
+    tests = server_data["tests"]
     valid, runs, result = benchmark(placebo_cmd)
     print()
     print(("-" * 15) + "DEV-OUT" + ("-" * 40))
