@@ -115,15 +115,15 @@ def workMan(worker_count, ffmpeg_cmd):
                 frames.append(int(float(new_line[0].split("=")[-1])))
                 framerates += int(float(new_line[1].split("=")[-1]))
                 speeds.append(float(new_line[6].split("=")[-1].replace("x", "")))
-            lineAmmount = len(framelines)
-            if lineAmmount == 0:
-                lineAmmount = 1
+            lineAmount = len(framelines)
+            if lineAmount == 0:
+                lineAmount = 1
             if len(frames) == 0:
                 frames.append(1)
 
-            avgSpeed = sum(speeds) / lineAmmount
+            avgSpeed = sum(speeds) / lineAmount
             maxFrame = max(frames)
-            avgFPS = framerates / lineAmmount
+            avgFPS = framerates / lineAmount
 
             worker_data = {
                 "frame": maxFrame,

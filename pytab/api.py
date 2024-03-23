@@ -70,13 +70,13 @@ placebo_WinTestData = {
     "ffmpeg": {
         "ffmpeg_source_url": "https://repo.jellyfin.org/releases/server/windows/versions/jellyfin-ffmpeg/5.1.4-3/jellyfin-ffmpeg_5.1.4-3-portable_win64.zip",
         "ffmpeg_version": "5.1.6-3",
-        "ffmpeg_hashs": None,
+        "ffmpeg_hashes": None,
     },
     "tests": [
         {
             "name": "jellyfish-40-mbps-hd-h264",
             "source_url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-40-mbps-hd-h264.mkv",
-            "source_hashs": None,
+            "source_hashes": None,
             "test_type": "transcode",
             "data": [
                 {
@@ -180,7 +180,7 @@ placebo_WinTestData = {
         {
             "name": "jellyfish-40-mbps-hd-hevc-10bit",
             "source_url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-40-mbps-hd-hevc-10bit.mkv",
-            "source_hashs": None,
+            "source_hashes": None,
             "test_type": "transcode",
             "data": [
                 {
@@ -288,13 +288,13 @@ placebo_LinxTestData = {
     "ffmpeg": {
         "ffmpeg_source_url": "https://repo.jellyfin.org/releases/server/ubuntu/versions/jellyfin-ffmpeg/6.0.1-2/jellyfin-ffmpeg6_6.0.1-2-focal_amd64.deb",
         "ffmpeg_version": "6.0.1-2",
-        "ffmpeg_hashs": None,
+        "ffmpeg_hashes": None,
     },
     "tests": [
         {
             "name": "jellyfish-40-mbps-hd-h264",
             "source_url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-40-mbps-hd-h264.mkv",
-            "source_hashs": None,
+            "source_hashes": None,
             "test_type": "transcode",
             "data": [
                 {
@@ -398,7 +398,7 @@ placebo_LinxTestData = {
         {
             "name": "jellyfish-40-mbps-hd-hevc-10bit",
             "source_url": "https://repo.jellyfin.org/jellyfish/media/jellyfish-40-mbps-hd-hevc-10bit.mkv",
-            "source_hashs": None,
+            "source_hashes": None,
             "test_type": "transcode",
             "data": [
                 {

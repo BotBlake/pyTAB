@@ -169,7 +169,7 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
     platformID = hwi.MatchID(platforms, 0)  # dummy: return = platforms[x]["id"]
     valid, server_data = api.getTestData(platformID)
     if not valid:
-        click.echo(f"Cancled: {server_data}")
+        click.echo(f"Canceled: {server_data}")
 
     #Downloading ffmpeg:
     
