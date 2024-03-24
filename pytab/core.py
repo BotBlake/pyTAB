@@ -39,7 +39,7 @@ placebo_cmd = [
 ]
 
 
-def calculate_sha256(file_path):
+def calculate_sha256(file_path: str) -> str:
     # Calculate SHA256 checksum of a file
     sha256_hash = sha256()
     with open(file_path, "rb") as f:
@@ -49,7 +49,7 @@ def calculate_sha256(file_path):
     return sha256_hash.hexdigest()
 
 
-def obtainSource(target_path: str, source_url: str, source_sha256: str) -> None:
+def obtainSource(target_path: str, source_url: str, source_sha256: str) -> tuple:
     target_path = os.path.realpath(target_path)  # Relative Path!
     filename = os.path.basename(source_url)  # Extract filename from the URL
     file_path = os.path.join(target_path, filename)  # path/filename
@@ -80,7 +80,7 @@ def obtainSource(target_path: str, source_url: str, source_sha256: str) -> None:
         return False, "Invalid Checksum!"  # Checksum invalid
 
 
-def benchmark(ffmpeg_cmd):
+def benchmark(ffmpeg_cmd: str) -> tuple:
     print("Benchmarking now...")
     runs = []
     total_workers = 9

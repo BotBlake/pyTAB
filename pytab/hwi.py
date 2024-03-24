@@ -19,5 +19,5 @@
 ##########################################################################################
 
 
-def MatchID(platforms, dummy_id):  # dummy: return = platforms[x]["id"]
+def MatchID(platforms: list, dummy_id: str) -> str:  # dummy: return = platforms[x]["id"]
     return platforms[dummy_id]["id"]

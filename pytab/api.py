@@ -19,12 +19,12 @@
 ##########################################################################################
 
 
-def getPlatform():
+def getPlatform() -> list:
     platforms = placebo_platforms["platforms"]  # API Logic here
     return platforms
 
 
-def getTestData(platformID: str) -> None:
+def getTestData(platformID: str) -> tuple:
     # All this will be replaced by actual API code.
     # If Return Code 429, message = retry_after - header
     valid = True

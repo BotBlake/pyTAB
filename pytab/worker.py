@@ -24,7 +24,7 @@ import re
 import concurrent.futures
 
 
-def run_ffmpeg(pid, ffmpeg_cmd):  # Process ID,
+def run_ffmpeg(pid: int, ffmpeg_cmd: str) -> tuple:  # Process ID,
     # click.echo(f"{pid} |> Running FFMPEG Process: {pid}")
     timeout = 120  # Stop any process that runs for more then 120sec
     failure_reason = None
@@ -56,7 +56,7 @@ def run_ffmpeg(pid, ffmpeg_cmd):  # Process ID,
     return ffmpeg_stderr, failure_reason
 
 
-def workMan(worker_count, ffmpeg_cmd):
+def workMan(worker_count: int, ffmpeg_cmd: str) -> tuple:
     raw_worker_data = {}
     # click.echo(f"> Run with {worker_count} Processes")
     with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
@@ -139,7 +139,7 @@ def workMan(worker_count, ffmpeg_cmd):
         return True, failure_reason
 
 
-def evaluateRunData(run_data_raw):
+def evaluateRunData(run_data_raw: list) -> dict:
     workers = len(run_data_raw)
 
     total_time = 0
