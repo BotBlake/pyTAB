@@ -58,6 +58,7 @@ def run_ffmpeg(pid: int, ffmpeg_cmd: str) -> tuple:  # Process ID,
 
 def workMan(worker_count: int, ffmpeg_cmd: str) -> tuple:
     raw_worker_data = {}
+    failure_reason = None
     # click.echo(f"> Run with {worker_count} Processes")
     with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
         futures = {
@@ -69,20 +70,14 @@ def workMan(worker_count: int, ffmpeg_cmd: str) -> tuple:
             try:
                 raw_worker_data[pid] = future.result()
                 # click.echo(f"> > > Finished Worker Process: {pid}")
+                if raw_worker_data[pid][1]:
+                    failure_reason = raw_worker_data[pid][1]
             except Exception as e:
                 print(f"Worker {pid} generated an exception: {e}")
 
-    for pid in range(worker_count):
-        worker_output = run_ffmpeg(
-            pid, ffmpeg_cmd
-        )  # Saving RAW-Data first, to save time during process-spawning
-        if worker_output[1]:
-            raw_worker_data = [
-                None
-            ]  # Deleting all the Raw Data, since run with failed Worker is not counted
-            failure_reason = worker_output[1]
-            continue
-        raw_worker_data[pid] = worker_output
+    if failure_reason:
+        raw_worker_data = None 
+        # Deleting all the Raw Data, since run with failed Worker is not counted
 
     run_data_raw = []
     if raw_worker_data:  # If no run Failed
