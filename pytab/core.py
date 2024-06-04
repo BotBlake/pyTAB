@@ -128,7 +128,11 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     "--ffmpeg",
     "ffmpeg_path",
     type=click.Path(
-        resolve_path=True, dir_okay=True, exists=True, writable=True, executable=True
+        resolve_path=True,
+        dir_okay=True,
+        exists=True,
+        writable=True,
+        executable=True,
     ),
     default="./ffmpeg",
     show_default=True,
@@ -146,10 +150,10 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
         readable=True,
         executable=False,
     ),
-    default="./ffmpeg",
+    default="./videos",
     show_default=True,
     required=False,
-    help="Path for JellyfinFFMPEG Download/execution",
+    help="Path for download of test files. (SSD required)",
 )
 @click.option(
     "--debug",
