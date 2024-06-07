@@ -23,6 +23,10 @@ from pytab import worker, api, hwi
 from hashlib import sha256
 from requests import get as reqGet
 
+from shutil import rmtree
+import zipfile
+import tarfile
+
 placebo_cmd = [
     "./ffmpeg/ffmpeg.exe",
     "-hide_banner",
@@ -49,7 +53,9 @@ def calculate_sha256(file_path: str) -> str:
     return sha256_hash.hexdigest()
 
 
-def obtainSource(target_path: str, source_url: str, source_sha256: str) -> tuple:
+def obtainSource(
+    target_path: str, source_url: str, source_sha256: str, notify_on_download: bool
+) -> tuple:
     target_path = os.path.realpath(target_path)  # Relative Path!
     filename = os.path.basename(source_url)  # Extract filename from the URL
     file_path = os.path.join(target_path, filename)  # path/filename
@@ -67,13 +73,16 @@ def obtainSource(target_path: str, source_url: str, source_sha256: str) -> tuple
     if not os.path.exists(target_path):
         os.makedirs(target_path)
 
-    click.echo("Downloading File...")
+    if notify_on_download:
+        click.echo("Downloading File...", nl=False)
+
     try:  # Download file
         response = reqGet(source_url)
         if response.status_code == 200:
             with open(file_path, "wb") as f:
                 f.write(response.content)
-            click.echo("Done!")
+            if notify_on_download:
+                click.echo(" Done!")
         else:
             return False, response.status_code  # Unable to download file
     except Exception:
@@ -84,6 +93,23 @@ def obtainSource(target_path: str, source_url: str, source_sha256: str) -> tuple
     else:
         os.remove(file_path)  # Delete file if checksum doesn't match
         return False, "Invalid Checksum!"  # Checksum invalid
+
+
+def unpackArchive(archive_path, target_path):
+    if os.path.exists(target_path):
+        rmtree(target_path)
+        click.echo("--> Replacing existing Files with validated ones.")
+    os.makedirs(target_path)
+
+    click.echo("Unpacking Archive...", nl=False)
+
+    if archive_path.endswith(".zip"):
+        with zipfile.ZipFile(archive_path, "r") as zip_ref:
+            zip_ref.extractall(target_path)
+    elif archive_path.endswith(".tar.gz"):
+        with tarfile.open(archive_path, "r:gz") as tar_ref:
+            tar_ref.extractall(target_path)
+    click.echo(" Done!")
 
 
 def benchmark(ffmpeg_cmd: str) -> tuple:
@@ -193,17 +219,21 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
         click.echo("Note: This File cannot be hash-verified!")
 
     ffmpeg_download = obtainSource(
-        ffmpeg_path, ffmpeg_data["ffmpeg_source_url"], ffmpeg_hash
+        ffmpeg_path, ffmpeg_data["ffmpeg_source_url"], ffmpeg_hash, True
     )
 
     if ffmpeg_download[0] is False:
         click.echo(f"An Error occured: {ffmpeg_download[1]}", err=True)
         click.pause("Press any key to exit")
         exit()
-    else:
-        click.echo("Valid Archive found!")
+
+    ffmpeg_files = f"{ffmpeg_path}/ffmpeg_files"
+    unpackArchive(ffmpeg_download[1], ffmpeg_files)
+    ffmpeg_binary = f"{ffmpeg_files}/ffmpeg"  # noqa: F841
 
     click.echo()
+
+    exit()
 
     tests = server_data["tests"]  # noqa: F841
     valid, runs, result = benchmark(placebo_cmd)
