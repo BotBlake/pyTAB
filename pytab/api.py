@@ -68,9 +68,11 @@ placebo_platforms = {
 placebo_WinTestData = {
     "token": "XL+mWzK8HrlwxFbaAUEA86vyFtg6hv85usNrnsrmzcUDCOpjP6mSdhChZXzUXbUUQR5j7N+ecLQa6+fCjE1amvfgUj5Duvgek1vpHsyX9VO41GR8MBu+/jx/ln6eaFJ+u57u+6MRC0oNhniJGqVtcw==",
     "ffmpeg": {
-        "ffmpeg_source_url": "https://repo.jellyfin.org/releases/server/windows/versions/jellyfin-ffmpeg/5.1.4-3/jellyfin-ffmpeg_5.1.4-3-portable_win64.zip",
-        "ffmpeg_version": "5.1.6-3",
-        "ffmpeg_hashs": None,
+        "ffmpeg_source_url": "https://repo.jellyfin.org/files/ffmpeg/windows/latest-6.x/win64/jellyfin-ffmpeg_6.0.1-7-portable_win64.zip",
+        "ffmpeg_version": "6.0.1-7",
+        "ffmpeg_hashs": {
+            "sha256": "2fd7712a453c112c2577e4ed84c2f7b48af3dc1bd56a54095ba3c8ac854f08e3"
+        },
     },
     "tests": [
         {
@@ -286,9 +288,11 @@ placebo_WinTestData = {
 placebo_LinxTestData = {
     "token": "XL+mWzK8HrlwxFbaAUEA86vyFtg6hv85usNrnsrmzcUDCOpjP6mSdhChZXzUXbUUQR5j7N+ecLQa6+fCjE1amvfgUj5Duvgek1vpHsyX9VO41GR8MBu+/jx/ln6eaFJ+u57u+6MRC0oNhniJGqVtcw==",
     "ffmpeg": {
-        "ffmpeg_source_url": "https://repo.jellyfin.org/releases/server/ubuntu/versions/jellyfin-ffmpeg/6.0.1-2/jellyfin-ffmpeg6_6.0.1-2-focal_amd64.deb",
-        "ffmpeg_version": "6.0.1-2",
-        "ffmpeg_hashs": None,
+        "ffmpeg_source_url": "https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-6.x/amd64/jellyfin-ffmpeg6_6.0.1-7-focal_amd64.deb",
+        "ffmpeg_version": "6.0.1-7",
+        "ffmpeg_hashs": {
+            "sha256": "a01b7d556f69941041e3265f916c22613b2f58fd39a062ccf8a3104b3c99350d"
+        },
     },
     "tests": [
         {
