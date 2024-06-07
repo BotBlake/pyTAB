@@ -63,11 +63,17 @@ def obtainSource(target_path: str, source_url: str, source_sha256: str) -> tuple
         else:
             os.remove(file_path)  # Delete file if checksum doesn't match
 
+    # Create target path if non present
+    if not os.path.exists(target_path):
+        os.makedirs(target_path)
+
+    click.echo("Downloading File...")
     try:  # Download file
         response = reqGet(source_url)
         if response.status_code == 200:
             with open(file_path, "wb") as f:
                 f.write(response.content)
+            click.echo("Done!")
         else:
             return False, response.status_code  # Unable to download file
     except Exception:
@@ -130,7 +136,6 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     type=click.Path(
         resolve_path=True,
         dir_okay=True,
-        exists=True,
         writable=True,
         executable=True,
     ),
@@ -145,10 +150,8 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     type=click.Path(
         resolve_path=True,
         dir_okay=True,
-        exists=True,
         writable=True,
         readable=True,
-        executable=False,
     ),
     default="./videos",
     show_default=True,
@@ -175,10 +178,34 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
     if not valid:
         click.echo(f"Cancled: {server_data}")
 
-    #Downloading ffmpeg:
-    
+    # Download ffmpeg
+    ffmpeg_data = server_data["ffmpeg"]
+    click.echo("Loading ffmpeg")
 
-    tests = server_data["tests"]
+    # Check if any provided hashing method is supported
+    ffmpeg_hash = None
+    if ffmpeg_data["ffmpeg_hashs"]:
+        if "sha256" in ffmpeg_data["ffmpeg_hashs"]:
+            ffmpeg_hash = ffmpeg_data["ffmpeg_hashs"]["sha256"]
+        else:
+            click.echo("Note: This Client cannot hash-verify this File!")
+    else:
+        click.echo("Note: This File cannot be hash-verified!")
+
+    ffmpeg_download = obtainSource(
+        ffmpeg_path, ffmpeg_data["ffmpeg_source_url"], ffmpeg_hash
+    )
+
+    if ffmpeg_download[0] is False:
+        click.echo(f"An Error occured: {ffmpeg_download[1]}", err=True)
+        click.pause("Press any key to exit")
+        exit()
+    else:
+        click.echo("Valid Archive found!")
+
+    click.echo()
+
+    tests = server_data["tests"]  # noqa: F841
     valid, runs, result = benchmark(placebo_cmd)
     print()
     print(("-" * 15) + "DEV-OUT" + ("-" * 40))
