@@ -50,7 +50,10 @@ def match_hash(hash_dict: dict, output: bool) -> tuple:
 
     if not hash_dict:
         if output:
-            click.echo("Note: This File cannot be hash-verified!")
+            click.echo(
+                "Note: "
+                + click.style("This file cannot be hash-verified!", fg="yellow")
+            )
         return None, None
 
     for hash in hash_dict:
@@ -59,7 +62,10 @@ def match_hash(hash_dict: dict, output: bool) -> tuple:
                 click.echo(f"Note: Compatible hashing method found. Using {hash}")
             return hash, hash_dict[hash]
     if output:
-        click.echo("Note: This Client cannot hash-verify this File!")
+        click.echo(
+            "Note: "
+            + click.style("This Client cannot hash-verify this file!", fg="yellow")
+        )
     return None, None
 
 
@@ -97,7 +103,7 @@ def obtainSource(
         os.makedirs(target_path)
 
     if notify_on_download:
-        click.echo("Downloading File...", nl=False)
+        click.echo("Downloading file...", nl=False)
 
     try:  # Download file
         response = reqGet(source_url)
@@ -105,7 +111,7 @@ def obtainSource(
             with open(file_path, "wb") as f:
                 f.write(response.content)
             if notify_on_download:
-                click.echo(" Done!")
+                click.echo(" success!")
         else:
             return False, response.status_code  # Unable to download file
     except Exception:
@@ -121,7 +127,10 @@ def obtainSource(
 def unpackArchive(archive_path, target_path):
     if os.path.exists(target_path):
         rmtree(target_path)
-        click.echo("--> Replacing existing Files with validated ones.")
+        click.echo(
+            "INFO: "
+            + click.style("Replacing existing files with validated ones.", fg="cyan")
+        )
     os.makedirs(target_path)
 
     click.echo("Unpacking Archive...", nl=False)
@@ -132,7 +141,7 @@ def unpackArchive(archive_path, target_path):
     elif archive_path.endswith(".tar.gz"):
         with tarfile.open(archive_path, "r:gz") as tar_ref:
             tar_ref.extractall(target_path)
-    click.echo(" Done!")
+    click.echo(" success!")
 
 
 def benchmark(ffmpeg_cmd: str) -> tuple:
@@ -229,7 +238,7 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
 
     # Download ffmpeg
     ffmpeg_data = server_data["ffmpeg"]
-    click.echo("Loading ffmpeg")
+    click.echo(click.style("Loading ffmpeg", bold=True))
 
     ffmpeg_download = obtainSource(
         ffmpeg_path, ffmpeg_data["ffmpeg_source_url"], ffmpeg_data["ffmpeg_hashs"], True
@@ -244,11 +253,12 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
     unpackArchive(ffmpeg_download[1], ffmpeg_files)
     ffmpeg_binary = f"{ffmpeg_files}/ffmpeg"  # noqa: F841
 
+    click.echo(click.style("Done", fg="green"))
     click.echo()
 
     # Downloading Videos
     files = server_data["tests"]
-    click.echo("Obtaining Test-Files:")
+    click.echo(click.style("Obtaining Test-Files:", bold=True))
     for file in files:
         name = os.path.basename(file["name"])
         click.echo(f'| "{name}" -', nl=False)
@@ -256,17 +266,19 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
             video_path, file["source_url"], file["source_hashs"], False
         )
         if success:
-            click.echo(" Okay!")
+            click.echo(" success!")
         else:
             click.echo(" Error")
             click.echo("")
             click.echo(f"The following Error occured: {output}", err=True)
             click.pause("Press any key to exit")
             exit()
-
+    click.echo(click.style("Done", fg="green"))
     click.echo()
 
-    exit()
+    if not click.confirm("Do you want to continue?"):
+        click.echo("Exiting...")
+        exit()
 
     valid, runs, result = benchmark(placebo_cmd)
     print()
