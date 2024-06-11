@@ -43,6 +43,23 @@ placebo_cmd = [
 ]
 
 
+def match_hash(hash_dict: dict) -> tuple:
+    supported_hashes = [
+        "sha256",
+    ]  # list of currently supported hashing methods
+
+    if not hash_dict:
+        click.echo("Note: This File cannot be hash-verified!")
+        return None, None
+
+    for hash in hash_dict:
+        if hash in supported_hashes:
+            click.echo(f"Note: Compatible hashing method found. Using {hash}")
+            return hash, hash_dict[hash]
+    click.echo("Note: This Client cannot hash-verify this File!")
+    return None, None
+
+
 def calculate_sha256(file_path: str) -> str:
     # Calculate SHA256 checksum of a file
     sha256_hash = sha256()
@@ -54,17 +71,20 @@ def calculate_sha256(file_path: str) -> str:
 
 
 def obtainSource(
-    target_path: str, source_url: str, source_sha256: str, notify_on_download: bool
+    target_path: str, source_url: str, hash_dict: dict, notify_on_download: bool
 ) -> tuple:
+    hash_algorithm, source_hash = match_hash(hash_dict)
+
     target_path = os.path.realpath(target_path)  # Relative Path!
     filename = os.path.basename(source_url)  # Extract filename from the URL
     file_path = os.path.join(target_path, filename)  # path/filename
 
     if os.path.exists(file_path):  # if file already exists
-        existing_checksum = calculate_sha256(file_path)  # checksum validation
-        if (
-            existing_checksum == source_sha256 or source_sha256 is None
-        ):  # if valid/no sum
+        existing_checksum = None
+        if hash_algorithm == "sha256":
+            existing_checksum = calculate_sha256(file_path)  # checksum validation
+
+        if existing_checksum == source_hash or source_hash is None:  # if valid/no sum
             return True, file_path  # Checksum valid, no need to download again
         else:
             os.remove(file_path)  # Delete file if checksum doesn't match
@@ -88,7 +108,7 @@ def obtainSource(
     except Exception:
         return False, "Unknown Error!"  # Unable to download file
     downloaded_checksum = calculate_sha256(file_path)  # checksum validation
-    if downloaded_checksum == source_sha256 or source_sha256 is None:  # if valid/no sum
+    if downloaded_checksum == source_hash or source_hash is None:  # if valid/no sum
         return True, file_path  # Checksum valid
     else:
         os.remove(file_path)  # Delete file if checksum doesn't match
@@ -208,18 +228,8 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
     ffmpeg_data = server_data["ffmpeg"]
     click.echo("Loading ffmpeg")
 
-    # Check if any provided hashing method is supported
-    ffmpeg_hash = None
-    if ffmpeg_data["ffmpeg_hashs"]:
-        if "sha256" in ffmpeg_data["ffmpeg_hashs"]:
-            ffmpeg_hash = ffmpeg_data["ffmpeg_hashs"]["sha256"]
-        else:
-            click.echo("Note: This Client cannot hash-verify this File!")
-    else:
-        click.echo("Note: This File cannot be hash-verified!")
-
     ffmpeg_download = obtainSource(
-        ffmpeg_path, ffmpeg_data["ffmpeg_source_url"], ffmpeg_hash, True
+        ffmpeg_path, ffmpeg_data["ffmpeg_source_url"], ffmpeg_data["ffmpeg_hashs"], True
     )
 
     if ffmpeg_download[0] is False:
@@ -235,7 +245,6 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
 
     exit()
 
-    tests = server_data["tests"]  # noqa: F841
     valid, runs, result = benchmark(placebo_cmd)
     print()
     print(("-" * 15) + "DEV-OUT" + ("-" * 40))
