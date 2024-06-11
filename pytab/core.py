@@ -280,6 +280,15 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
         click.echo("Exiting...")
         exit()
 
+    click.echo("Starting Benchmark...")
+    for file in files:  # File Benchmarking Loop
+        click.echo(f"> Current File: {file["name"]}")
+        tests = file["data"]
+        for test in tests:
+            click.echo(
+                f'> > Current Test: {test["from_resolution"]} - {test["to_resolution"]}'
+            )
+
     valid, runs, result = benchmark(placebo_cmd)
     print()
     print(("-" * 15) + "DEV-OUT" + ("-" * 40))
