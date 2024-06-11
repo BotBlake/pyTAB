@@ -43,20 +43,23 @@ placebo_cmd = [
 ]
 
 
-def match_hash(hash_dict: dict) -> tuple:
+def match_hash(hash_dict: dict, output: bool) -> tuple:
     supported_hashes = [
         "sha256",
     ]  # list of currently supported hashing methods
 
     if not hash_dict:
-        click.echo("Note: This File cannot be hash-verified!")
+        if output:
+            click.echo("Note: This File cannot be hash-verified!")
         return None, None
 
     for hash in hash_dict:
         if hash in supported_hashes:
-            click.echo(f"Note: Compatible hashing method found. Using {hash}")
+            if output:
+                click.echo(f"Note: Compatible hashing method found. Using {hash}")
             return hash, hash_dict[hash]
-    click.echo("Note: This Client cannot hash-verify this File!")
+    if output:
+        click.echo("Note: This Client cannot hash-verify this File!")
     return None, None
 
 
@@ -73,7 +76,7 @@ def calculate_sha256(file_path: str) -> str:
 def obtainSource(
     target_path: str, source_url: str, hash_dict: dict, notify_on_download: bool
 ) -> tuple:
-    hash_algorithm, source_hash = match_hash(hash_dict)
+    hash_algorithm, source_hash = match_hash(hash_dict, notify_on_download)
 
     target_path = os.path.realpath(target_path)  # Relative Path!
     filename = os.path.basename(source_url)  # Extract filename from the URL
@@ -240,6 +243,26 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
     ffmpeg_files = f"{ffmpeg_path}/ffmpeg_files"
     unpackArchive(ffmpeg_download[1], ffmpeg_files)
     ffmpeg_binary = f"{ffmpeg_files}/ffmpeg"  # noqa: F841
+
+    click.echo()
+
+    # Downloading Videos
+    files = server_data["tests"]
+    click.echo("Obtaining Test-Files:")
+    for file in files:
+        name = os.path.basename(file["name"])
+        click.echo(f'| "{name}" -', nl=False)
+        success, output = obtainSource(
+            video_path, file["source_url"], file["source_hashs"], False
+        )
+        if success:
+            click.echo(" Okay!")
+        else:
+            click.echo(" Error")
+            click.echo("")
+            click.echo(f"The following Error occured: {output}", err=True)
+            click.pause("Press any key to exit")
+            exit()
 
     click.echo()
 
