@@ -28,12 +28,12 @@ import zipfile
 import tarfile
 
 placebo_cmd = [
-    "./ffmpeg/ffmpeg.exe",
+    "{ffmpeg}",
     "-hide_banner",
     "-c:v",
     "h264",
     "-i",
-    "./videos/nvidia_s.mp4",
+    "{path}/jellyfish-40-mbps-hd-h264.mkv",
     "-c:v",
     "h264_nvenc",
     "-benchmark",
@@ -147,7 +147,7 @@ def unpackArchive(archive_path, target_path):
 def benchmark(ffmpeg_cmd: str) -> tuple:
     print("Benchmarking now...")
     runs = []
-    total_workers = 9
+    total_workers = 1
     run = True
     last_Speed = -0.5  # to Assure first worker always has the required difference
     failure_reason = []
@@ -283,19 +283,30 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
     click.echo("Starting Benchmark...")
     for file in files:  # File Benchmarking Loop
         click.echo(f"> Current File: {file["name"]}")
+        filename = os.path.basename(file["source_url"])
+        current_file = f"{video_path}/{filename}"
         tests = file["data"]
         for test in tests:
             click.echo(
                 f'> > Current Test: {test["from_resolution"]} - {test["to_resolution"]}'
             )
+            commands = test["arguments"]
+            for command in commands:
+                supported_types = ["nvidia", "cpu"]
+                if command["type"] in supported_types:
+                    click.echo(f"> > > Current Device: {command["type"]}")
+                    arguments = command["args"]
+                    arguments = arguments.format(video_file = current_file, gpu = 0)
+                    test_cmd = f"{ffmpeg_binary} {arguments}"
 
-    valid, runs, result = benchmark(placebo_cmd)
-    print()
-    print(("-" * 15) + "DEV-OUT" + ("-" * 40))
-    print(runs)
-    print("-" * 20)
-    print(result)
-    print(("-" * 15) + "DEV-END" + ("-" * 40))
+
+                    valid, runs, result = benchmark(test_cmd)
+                    print()
+                    print(("-" * 15) + "DEV-OUT" + ("-" * 40))
+                    print(runs)
+                    print("-" * 20)
+                    print(result)
+                    print(("-" * 15) + "DEV-END" + ("-" * 40))
 
 
 def main():
