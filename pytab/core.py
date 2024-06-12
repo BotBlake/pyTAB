@@ -22,6 +22,7 @@ import click
 from pytab import worker, api, hwi
 from hashlib import sha256
 from requests import get as reqGet
+from json import dumps
 
 from shutil import rmtree
 import zipfile
@@ -145,7 +146,6 @@ def unpackArchive(archive_path, target_path):
 
 
 def benchmark(ffmpeg_cmd: str) -> tuple:
-    print("Benchmarking now...")
     runs = []
     total_workers = 1
     run = True
@@ -280,6 +280,7 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
         click.echo("Exiting...")
         exit()
 
+    benchmark_data = []
     click.echo("Starting Benchmark...")
     for file in files:  # File Benchmarking Loop
         click.echo(f"> Current File: {file["name"]}")
@@ -292,21 +293,25 @@ def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
             )
             commands = test["arguments"]
             for command in commands:
+                test_data = {}
                 supported_types = ["nvidia", "cpu"]
                 if command["type"] in supported_types:
                     click.echo(f"> > > Current Device: {command["type"]}")
                     arguments = command["args"]
-                    arguments = arguments.format(video_file = current_file, gpu = 0)
+                    arguments = arguments.format(video_file=current_file, gpu=0)
                     test_cmd = f"{ffmpeg_binary} {arguments}"
 
-
                     valid, runs, result = benchmark(test_cmd)
-                    print()
-                    print(("-" * 15) + "DEV-OUT" + ("-" * 40))
-                    print(runs)
-                    print("-" * 20)
-                    print(result)
-                    print(("-" * 15) + "DEV-END" + ("-" * 40))
+
+                    test_data["id"] = test["id"]
+                    test_data["type"] = command["type"]
+                    test_data["selected_gpu"] = 0
+                    test_data["selected_cpu"] = 0
+                    test_data["runs"] = runs
+                    test_data["results"] = result
+
+                    benchmark_data.append(test_data)
+    click.echo(dumps(benchmark_data, indent=4))
 
 
 def main():

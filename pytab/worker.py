@@ -41,7 +41,7 @@ def run_ffmpeg(pid: int, ffmpeg_cmd: str) -> tuple:  # Process ID,
         ffmpeg_stderr = process_output.stderr
 
         if retcode > 0:
-            click.echo(f"ERROR: {ffmpeg_stderr}")
+            # click.echo(f"ERROR: {ffmpeg_stderr}")    <- Silencing Output
             failure_reason = "generic_ffmpeg_failure"  # <-- HELP WANTED!
 
     except subprocess.TimeoutExpired:
@@ -76,7 +76,7 @@ def workMan(worker_count: int, ffmpeg_cmd: str) -> tuple:
                 print(f"Worker {pid} generated an exception: {e}")
 
     if failure_reason:
-        raw_worker_data = None 
+        raw_worker_data = None
         # Deleting all the Raw Data, since run with failed Worker is not counted
 
     run_data_raw = []
