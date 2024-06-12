@@ -20,8 +20,8 @@
 import click
 import requests
 
-def getPlatform() -> list:
-    server_url = ""
+
+def getPlatform(server_url: str) -> list:
     click.echo("Loading Platform Data...", nl=False)
     platforms = None
     try:

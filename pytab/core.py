@@ -217,20 +217,28 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     help="Path for download of test files. (SSD required)",
 )
 @click.option(
+    "--server",
+    "server_url",
+    required=True,
+    help="Server URL for test data and result submition.",
+)
+@click.option(
     "--debug",
     "debug_flag",
     is_flag=True,
     default=False,
     help="Enable additional debug output",
 )
-def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
+def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) -> None:
     """
     Python Transcoding Acceleration Benchmark Client made for Jellyfin Hardware Survey
     """
     global debug
     debug = debug_flag
 
-    platforms = api.getPlatform()  # obtain list of (supported) Platforms + ID's
+    platforms = api.getPlatform(
+        server_url
+    )  # obtain list of (supported) Platforms + ID's
     platformID = hwi.MatchID(platforms, 0)  # dummy: return = platforms[x]["id"]
     valid, server_data = api.getTestData(platformID)
     if not valid:
