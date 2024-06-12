@@ -22,7 +22,7 @@ import requests
 
 
 def getPlatform(server_url: str) -> list:
-    click.echo("Loading Platform Data...", nl=False)
+    click.echo("| Fetch Supported Platforms...", nl=False)
     platforms = None
     try:
         response = requests.get(f"{server_url}/api/v1/TestDataApi/Platforms")

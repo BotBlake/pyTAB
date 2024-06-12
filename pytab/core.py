@@ -236,13 +236,19 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
     global debug
     debug = debug_flag
 
+    click.echo()
+    click.echo(click.style("System Initialization", bold=True))
     platforms = api.getPlatform(
         server_url
     )  # obtain list of (supported) Platforms + ID's
+
     platformID = hwi.MatchID(platforms, 0)  # dummy: return = platforms[x]["id"]
     valid, server_data = api.getTestData(platformID)
     if not valid:
         click.echo(f"Cancled: {server_data}")
+        exit()
+    click.echo(click.style("Done", fg="green"))
+    click.echo()
 
     # Download ffmpeg
     ffmpeg_data = server_data["ffmpeg"]
