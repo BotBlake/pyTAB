@@ -87,46 +87,47 @@ placebo_WinTestData = {
                     "to_resolution": "1080p",
                     "bitrate": 9616000,
                     "arguments": [
-                        {
-                            "type": "intel",
-                            "args": "-init_hw_device vaapi=va:/dev/dri/by-path/{gpu}-render -init_hw_device qsv=qs@va -hwaccel qsv -hwaccel_output_format qsv -c:v hevc_qsv -i {video_file} -autoscale 0 -an -sn -vf scale_qsv=-1:142:format=nv12 -c:v hevc_qsv -preset veryfast -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
-                            "codec": "h265",
-                        },
-                        {
-                            "type": "nvidia",
-                            "args": "-init_hw_device cuda=cu:{gpu} -hwaccel cuda -hwaccel_output_format cuda -c:v hevc_cuvid -i {video_file} -autoscale 0 -an -sn -vf scale_cuda=-1:142:yuv420p -c:v hevc_nvenc -preset p1 -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
-                            "codec": "h265",
-                        },
-                        {
-                            "type": "amd",
-                            "args": "-init_hw_device vaapi=va:/dev/dri/by-path/{gpu}-render -hwaccel vaapi -hwaccel_output_format vaapi -c:v hevc -i {video_file} -autoscale 0 -an -sn -vf scale_vaapi=-1:142:format=nv12 -c:v hevc_vaapi -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
-                            "codec": "h265",
-                        },
-                        {
-                            "type": "cpu",
-                            "args": "-c:v hevc -i {video_file} -autoscale 0 -an -sn -vf scale=trunc(min(max(iw\\,ih*a)\\,142)/2)*2:trunc(ow/a/2)*2,format=yuv420p -c:v libx265 -preset veryfast -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
-                            "codec": "h265",
-                        },
-                        {
-                            "type": "nvidia",
-                            "args": "-init_hw_device cuda=cu:{gpu} -hwaccel cuda -hwaccel_output_format cuda -c:v h264_cuvid -i {video_file} -autoscale 0 -an -sn -vf scale_cuda=-1:142:yuv420p -c:v h264_nvenc -preset p1 -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
-                            "codec": "h264",
-                        },
-                        {
-                            "type": "amd",
-                            "args": "-init_hw_device vaapi=va:/dev/dri/by-path/{gpu}-render -hwaccel vaapi -hwaccel_output_format vaapi -c:v h264 -i {video_file} -autoscale 0 -an -sn -vf scale_vaapi=-1:142:format=nv12 -c:v h264_vaapi -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
-                            "codec": "h264",
-                        },
-                        {
-                            "type": "intel",
-                            "args": "-init_hw_device vaapi=va:/dev/dri/by-path/{gpu}-render -init_hw_device qsv=qs@va -hwaccel qsv -hwaccel_output_format qsv -c:v h264_qsv -i {video_file} -autoscale 0 -an -sn -vf scale_qsv=-1:142:format=nv12 -c:v h264_qsv -preset veryfast -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
-                            "codec": "h264",
-                        },
-                        {
-                            "type": "cpu",
-                            "args": "-c:v h264 -i {video_file} -autoscale 0 -an -sn -vf scale=trunc(min(max(iw\\,ih*a)\\,142)/2)*2:trunc(ow/a/2)*2,format=yuv420p -c:v libx264 -preset veryfast -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
-                            "codec": "h264",
-                        },
+                            {
+                                "type": "intel",
+                                "args": "-init_hw_device vaapi=va:/dev/dri/by-path/{gpu}-render -init_hw_device qsv=qs@va -hwaccel qsv -hwaccel_output_format qsv -c:v hevc_qsv -i {video_file} -autoscale 0 -an -sn -vf scale_qsv=-1:142:format=nv12 -c:v hevc_qsv -preset veryfast -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
+                                "codec": "h265"
+                            },
+                            {
+                                "type": "nvidia",
+                                "args": "-init_hw_device cuda=cu:{gpu} -hwaccel cuda -hwaccel_output_format cuda -c:v hevc_cuvid -i {video_file} -autoscale 0 -an -sn -vf scale_cuda=-1:142:yuv420p -c:v hevc_nvenc -preset p1 -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
+                                "codec": "h265"
+                            },
+                            {
+                                "type": "amd",
+                                "args": "-init_hw_device vaapi=va:/dev/dri/by-path/{gpu}-render -hwaccel vaapi -hwaccel_output_format vaapi -c:v hevc -i {video_file} -autoscale 0 -an -sn -vf scale_vaapi=-1:142:format=nv12 -c:v hevc_vaapi -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
+                                "codec": "h265"
+                            },
+                            {
+                                "type": "cpu",
+                                "args": "-c:v hevc -i {video_file} -autoscale 0 -an -sn -vf scale=trunc(min(max(iw\\,ih*a)\\,142)/2)*2:trunc(ow/a/2)*2,format=yuv420p -c:v libx265 -preset veryfast -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
+                                "codec": "h265"
+                            },
+                            {
+                                "type": "nvidia",
+                                "args": "-init_hw_device cuda=cu:{gpu} -hwaccel cuda -hwaccel_output_format cuda -c:v h264_cuvid -i {video_file} -autoscale 0 -an -sn -vf scale_cuda=-1:142:yuv420p -c:v h264_nvenc -preset p1 -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
+                                "codec": "h264"
+                            },
+                            {
+                                "type": "amd",
+                                "args": "-init_hw_device vaapi=va:/dev/dri/by-path/{gpu}-render -hwaccel vaapi -hwaccel_output_format vaapi -c:v h264 -i {video_file} -autoscale 0 -an -sn -vf scale_vaapi=-1:142:format=nv12 -c:v h264_vaapi -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
+                                "codec": "h264"
+                            },
+                            {
+                                "type": "intel",
+                                "args": "-init_hw_device vaapi=va:/dev/dri/by-path/{gpu}-render -init_hw_device qsv=qs@va -hwaccel qsv -hwaccel_output_format qsv -c:v h264_qsv -i {video_file} -autoscale 0 -an -sn -vf scale_qsv=-1:142:format=nv12 -c:v h264_qsv -preset veryfast -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
+                                "codec": "h264"
+                            },
+                            {
+                                "type": "cpu",
+                                "args": "-c:v h264 -i {video_file} -autoscale 0 -an -sn -vf scale=trunc(min(max(iw\\,ih*a)\\,142)/2)*2:trunc(ow/a/2)*2,format=yuv420p -c:v libx264 -preset veryfast -b:v 9616000 -maxrate 9616000 -f null - -benchmark",
+                                "codec": "h264"
+                            },
+
                     ],
                 },
                 {
