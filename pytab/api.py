@@ -17,10 +17,28 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 ##########################################################################################
-
+import click
+import requests
 
 def getPlatform() -> list:
-    platforms = placebo_platforms["platforms"]  # API Logic here
+    server_url = ""
+    click.echo("Loading Platform Data...", nl=False)
+    platforms = None
+    try:
+        response = requests.get(f"{server_url}/api/v1/TestDataApi/Platforms")
+        if response.status_code == 200:
+            click.echo(" success!")
+            platforms = response.json()
+        else:
+            click.echo(" Error")
+            click.echo(f"ERROR: Server replied with {response.status_code}")
+            click.pause("Press any key to exit")
+            exit()
+    except Exception:
+        click.echo(" Error")
+        click.echo("ERROR: No connection to Server possible")
+        exit()
+    platforms = platforms["platforms"]
     return platforms
 
 
