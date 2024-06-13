@@ -242,7 +242,7 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
         server_url
     )  # obtain list of (supported) Platforms + ID's
 
-    platformID = hwi.MatchID(platforms, 0)  # dummy: return = platforms[x]["id"]
+    platformID = hwi.MatchID(platforms, 0)
     valid, server_data = api.getTestData(platformID, platforms, server_url)
     if not valid:
         click.echo(f"Cancled: {server_data}")
@@ -265,7 +265,7 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
 
     ffmpeg_files = f"{ffmpeg_path}/ffmpeg_files"
     unpackArchive(ffmpeg_download[1], ffmpeg_files)
-    ffmpeg_binary = f"{ffmpeg_files}/ffmpeg"  # noqa: F841
+    ffmpeg_binary = f"{ffmpeg_files}/ffmpeg" 
 
     click.echo(click.style("Done", fg="green"))
     click.echo()
