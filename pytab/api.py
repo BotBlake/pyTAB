@@ -42,19 +42,38 @@ def getPlatform(server_url: str) -> list:
     return platforms
 
 
-def getTestData(platformID: str) -> tuple:
+def getTestData(platformID: str, platforms_data: list, server_url: str) -> tuple:
     # All this will be replaced by actual API code.
     # If Return Code 429, message = retry_after - header
     valid = True
-    if platformID == placebo_platforms["platforms"][0]["id"]:  # if Windows 11
-        message = placebo_WinTestData
-    elif platformID == placebo_platforms["platforms"][1]["id"]:  # if Ubuntu / Linux
-        message = placebo_LinxTestData
-    else:
-        print("Sorry! The dummy API is only build for Win11 and Ubuntu")
-        exit(1)
+    click.echo("| Loading tests... ", nl=False)
+    current_platform = None
+    for platform in platforms_data:
+        if platform["id"] == platformID and platform["supported"]:
+            current_platform = platform["id"]
+    if not current_platform:
+        click.echo(" Error")
+        click.echo("ERROR: Your Platform isnt Supported.")
+        click.pause("Press any key to exit")
+        exit()
 
-    return valid, message
+    try:
+        response = requests.get(
+            f"{server_url}/api/v1/TestDataApi?platformId={current_platform}"
+        )
+        if response.status_code == 200:
+            click.echo(" success!")
+            test_data = response.json()
+        else:
+            click.echo(" Error")
+            click.echo(f"ERROR: Server replied with {response.status_code}")
+            click.pause("Press any key to exit")
+            exit()
+    except Exception:
+        click.echo(" Error")
+        click.echo("ERROR: No connection to Server possible")
+        exit()
+    return valid, test_data
 
 
 # Hardcoded API Responses, for Dev Info check Server Whitepaper

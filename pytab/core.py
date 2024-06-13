@@ -243,7 +243,7 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
     )  # obtain list of (supported) Platforms + ID's
 
     platformID = hwi.MatchID(platforms, 0)  # dummy: return = platforms[x]["id"]
-    valid, server_data = api.getTestData(platformID)
+    valid, server_data = api.getTestData(platformID, platforms, server_url)
     if not valid:
         click.echo(f"Cancled: {server_data}")
         exit()
