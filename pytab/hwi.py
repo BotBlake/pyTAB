@@ -107,3 +107,24 @@ def get_cpu_info():
     cpu_elements.append(cpu_element)
 
     return cpu_elements
+
+def get_ram_info():
+    ram_modules = []
+    if platform.system() == "Windows":
+        c = wmi.WMI()
+        for ram in c.Win32_PhysicalMemory():
+            capacity = int(ram.Capacity) // (1024**3)  # Convert bytes to gigabytes
+            speed = ram.Speed
+            form_factor = ram.FormFactor
+            ram_module = {
+                "id":ram.Tag.strip().replace(" ","_"),
+                "class":"memory",
+                'physid':ram.PartNumber,
+                "units":"gigabytes",
+                'Capacity': capacity,
+                'vendor': ram.Manufacturer,
+                'Speed': speed,
+                'FormFactor': form_factor
+            }
+            ram_modules.append(ram_module)
+    return ram_modules
