@@ -22,7 +22,7 @@ import click
 from pytab import worker, api, hwi
 from hashlib import sha256
 from requests import get as reqGet
-from json import dumps
+from json import dumps, dump
 
 from shutil import rmtree
 import zipfile
@@ -152,7 +152,9 @@ def benchmark(ffmpeg_cmd: str) -> tuple:
     last_Speed = -0.5  # to Assure first worker always has the required difference
     failure_reason = []
 
-    with click.progressbar(length=0, label="Workers: 1, Speed: 0.0") as progress_bar:
+    with click.progressbar(
+        length=0, label=f"Workers: {total_workers}, Speed: 0.0"
+    ) as progress_bar:
         while run:
             output = worker.workMan(total_workers, ffmpeg_cmd)
             # First check if we continue Running:
@@ -182,6 +184,21 @@ def benchmark(ffmpeg_cmd: str) -> tuple:
         return True, runs, result
     else:
         return False, runs, {}
+
+
+def output_json(data, file_path):
+    # Create the directory if it doesn't exist
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+    # Write the data to the JSON file
+    if file_path:
+        with open(file_path, "w") as json_file:
+            dump(data, json_file, indent=4)
+        click.echo(f"Data successfully saved to {file_path}")
+    else:
+        click.echo()
+        click.echo("No output file specified. Writing to stdout.")
+        click.echo(dumps(data, indent=4))
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=120)
@@ -223,13 +240,27 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     help="Server URL for test data and result submition.",
 )
 @click.option(
+    "--output_path",
+    type=click.Path(),
+    default="./output.json",
+    show_default=True,
+    required=False,
+    help="Path to the output JSON file.",
+)
+@click.option(
     "--debug",
     "debug_flag",
     is_flag=True,
     default=False,
     help="Enable additional debug output",
 )
-def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) -> None:
+def cli(
+    ffmpeg_path: str,
+    video_path: str,
+    server_url: str,
+    output_path: str,
+    debug_flag: bool,
+) -> None:
     """
     Python Transcoding Acceleration Benchmark Client made for Jellyfin Hardware Survey
     """
@@ -270,7 +301,7 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
 
     ffmpeg_files = f"{ffmpeg_path}/ffmpeg_files"
     unpackArchive(ffmpeg_download[1], ffmpeg_files)
-    ffmpeg_binary = f"{ffmpeg_files}/ffmpeg" 
+    ffmpeg_binary = f"{ffmpeg_files}/ffmpeg"
 
     click.echo(click.style("Done", fg="green"))
     click.echo()
@@ -313,7 +344,9 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
             commands = test["arguments"]
             for command in commands:
                 test_data = {}
-                supported_types = ["nvidia", "cpu"]
+                supported_types = [
+                    "nvidia"
+                ]  # reduced, so that development-tests finish faster
                 if command["type"] in supported_types:
                     click.echo(f"> > > Current Device: {command['type']}")
                     arguments = command["args"]
@@ -330,12 +363,14 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
                     test_data["results"] = result
 
                     benchmark_data.append(test_data)
+    click.echo("")  # Displaying Prompt, before attempting to output / build final dict
+    click.pause("Benchmark Done. Press Enter to Output.")
     result_data = {
-        "token" : "not_provided_yet",
-        "hwinfo" : system_info,
-        "tests" : benchmark_data
+        "token": "not_provided_yet",
+        "hwinfo": system_info,
+        "tests": benchmark_data,
     }
-    click.echo(dumps(result_data, indent=4))
+    output_json(result_data, output_path)
 
 
 def main():

@@ -1,6 +1,7 @@
 #Ignoring temp-files used by the tool
 /videos/*
 /ffmpeg/*
+output.json
 
 #Python Cache
 *pyc
