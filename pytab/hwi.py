@@ -18,6 +18,8 @@
 #
 ##########################################################################################
 import platform
+if platform.system() == "Windows":
+    import wmi
 
 def MatchID(platforms: list, dummy_id: str) -> str:
     for element in platforms:
@@ -56,3 +58,30 @@ def get_os_info():
         os_element['bug_report_url'] = "https://support.microsoft.com/contactus/"
 
     return os_element
+
+def get_gpu_info():
+    gpu_elements = list()
+    if platform.system() == "Windows":
+        c = wmi.WMI()
+        gpus = c.Win32_VideoController()
+
+        for i, gpu in enumerate(gpus):
+            configuration = {
+                "driver":gpu.DriverVersion.strip(),
+                }
+
+            vendor = gpu.AdapterCompatibility.strip()
+            gpu_element = {
+                "id" : f"GPU{i+1}",
+                "class": "display",
+                "description":gpu.creationClassName.strip(),
+                "product": gpu.Name,
+                "vendor": vendor,
+                "physid":gpu.DeviceID.strip(),
+                "businfo":gpu.PNPDeviceID.strip(),
+                "configuration": configuration,
+            }
+            gpu_elements.append(gpu_element)
+    else:
+        print("Linux Hardware information not yet supported")
+    return gpu_elements
