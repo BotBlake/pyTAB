@@ -345,7 +345,8 @@ def cli(
             for command in commands:
                 test_data = {}
                 supported_types = [
-                    "nvidia"
+                    "nvidia",
+                    "cpu"
                 ]  # reduced, so that development-tests finish faster
                 if command["type"] in supported_types:
                     click.echo(f"> > > Current Device: {command['type']}")
@@ -362,11 +363,13 @@ def cli(
                     test_data["runs"] = runs
                     test_data["results"] = result
 
-                    benchmark_data.append(test_data)
+                    if len(runs) >= 1:
+                        benchmark_data.append(test_data)
     click.echo("")  # Displaying Prompt, before attempting to output / build final dict
     click.pause("Benchmark Done. Press Enter to Output.")
     result_data = {
         "token": "not_provided_yet",
+        "ffmpeg": ffmpeg_data,
         "hwinfo": system_info,
         "tests": benchmark_data,
     }

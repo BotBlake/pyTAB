@@ -68,6 +68,7 @@ def get_os_info() -> dict:
     elif os_element["name"] == "Windows":
         os_element["pretty_name"] = platform.system() + " " + platform.release()
         os_element["id"] = "windows"
+        os_element["version_codename"] = "win32"
         os_element["home_url"] = "https://www.microsoft.com/windows"
         os_element["support_url"] = "https://support.microsoft.com"
         os_element["bug_report_url"] = "https://support.microsoft.com/contactus/"
@@ -138,7 +139,7 @@ def get_ram_info() -> list:
                 "class": "memory",
                 "physid": ram.PartNumber,
                 "units": "gigabytes",
-                "Capacity": capacity,
+                "size": capacity,
                 "vendor": ram.Manufacturer,
                 "Speed": speed,
                 "FormFactor": form_factor,
