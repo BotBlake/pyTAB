@@ -244,7 +244,7 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
 
     platformID = hwi.MatchID(platforms, 0)
 
-    click.echo("Obtaining System Information...", nl=False)
+    click.echo("| Obtaining System Information...", nl=False)
     system_info = hwi.get_system_info()
     click.echo(" success!")
 
