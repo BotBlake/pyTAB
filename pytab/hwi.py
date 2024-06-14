@@ -19,8 +19,11 @@
 ##########################################################################################
 import platform
 import cpuinfo
+from json import dumps
+
 if platform.system() == "Windows":
     import wmi
+
 
 def MatchID(platforms: list, dummy_id: str) -> str:
     for element in platforms:
@@ -28,39 +31,51 @@ def MatchID(platforms: list, dummy_id: str) -> str:
             return element["id"]
     return None
 
-def get_os_info():
-    required = ["pretty_name", "name", "version_id", "version", "version_codename", "id", "home_url", "support_url", "bug_report_url"]
+
+def get_os_info() -> dict:
+    required = [
+        "pretty_name",
+        "name",
+        "version_id",
+        "version",
+        "version_codename",
+        "id",
+        "home_url",
+        "support_url",
+        "bug_report_url",
+    ]
     os_element = dict()
 
     # Getting system name, release and version
-    os_element['name'] = platform.system()
-    os_element['version'] = platform.version()
-    os_element['version_id'] = platform.release()
-    
+    os_element["name"] = platform.system()
+    os_element["version"] = platform.version()
+    os_element["version_id"] = platform.release()
+
     # Filling all possible values
-    if os_element['name'] == 'Linux':
+    if os_element["name"] == "Linux":
         try:
-            with open('/etc/os-release') as f:
+            with open("/etc/os-release") as f:
                 for line in f:
-                    key, value = line.strip().split('=', 1)
+                    key, value = line.strip().split("=", 1)
                     value = value.strip('"')
                     print(f"Key: {key} -- Value: {value}")
                     if key.lower() in required:
                         os_element[key.lower()] = value
         except FileNotFoundError:
-            os_element['pretty_name'] = "Linux (Unknown Distro)"
-            os_element['id'] = "linux"
-    
-    elif os_element['name'] == 'Windows':
-        os_element['pretty_name'] = platform.system() + " " + platform.release()
-        os_element['id'] = "windows"
-        os_element['home_url'] = "https://www.microsoft.com/windows"
-        os_element['support_url'] = "https://support.microsoft.com"
-        os_element['bug_report_url'] = "https://support.microsoft.com/contactus/"
+            os_element["pretty_name"] = "Linux (Unknown Distro)"
+            os_element["id"] = "linux"
+
+    elif os_element["name"] == "Windows":
+        os_element["pretty_name"] = platform.system() + " " + platform.release()
+        os_element["id"] = "windows"
+        os_element["home_url"] = "https://www.microsoft.com/windows"
+        os_element["support_url"] = "https://support.microsoft.com"
+        os_element["bug_report_url"] = "https://support.microsoft.com/contactus/"
 
     return os_element
 
-def get_gpu_info():
+
+def get_gpu_info() -> list:
     gpu_elements = list()
     if platform.system() == "Windows":
         c = wmi.WMI()
@@ -68,18 +83,18 @@ def get_gpu_info():
 
         for i, gpu in enumerate(gpus):
             configuration = {
-                "driver":gpu.DriverVersion.strip(),
-                }
+                "driver": gpu.DriverVersion.strip(),
+            }
 
             vendor = gpu.AdapterCompatibility.strip()
             gpu_element = {
-                "id" : f"GPU{i+1}",
+                "id": f"GPU{i+1}",
                 "class": "display",
-                "description":gpu.creationClassName.strip(),
+                "description": gpu.creationClassName.strip(),
                 "product": gpu.Name,
                 "vendor": vendor,
-                "physid":gpu.DeviceID.strip(),
-                "businfo":gpu.PNPDeviceID.strip(),
+                "physid": gpu.DeviceID.strip(),
+                "businfo": gpu.PNPDeviceID.strip(),
                 "configuration": configuration,
             }
             gpu_elements.append(gpu_element)
@@ -87,7 +102,8 @@ def get_gpu_info():
         print("Linux Hardware information not yet supported")
     return gpu_elements
 
-def get_cpu_info():
+
+def get_cpu_info() -> list:
     cpu_info = cpuinfo.get_cpu_info()
     cpu_elements = list()
     vendor = cpu_info["vendor_id_raw"]
@@ -98,18 +114,19 @@ def get_cpu_info():
 
     cpu_element = {
         "product": cpu_info["brand_raw"],
-        "vendor" : vendor,
-        "cores" : cpu_info["count"],
-        "architecture" : cpu_info["arch_string_raw"],
-        "hz_advertised" : cpu_info["hz_advertised"][0],
-        "capabilities" : cpu_info["flags"]
+        "vendor": vendor,
+        "cores": cpu_info["count"],
+        "architecture": cpu_info["arch_string_raw"],
+        "hz_advertised": cpu_info["hz_advertised"][0],
+        "capabilities": cpu_info["flags"],
     }
     cpu_elements.append(cpu_element)
 
     return cpu_elements
 
-def get_ram_info():
-    ram_modules = []
+
+def get_ram_info() -> list:
+    ram_modules = list()
     if platform.system() == "Windows":
         c = wmi.WMI()
         for ram in c.Win32_PhysicalMemory():
@@ -117,14 +134,29 @@ def get_ram_info():
             speed = ram.Speed
             form_factor = ram.FormFactor
             ram_module = {
-                "id":ram.Tag.strip().replace(" ","_"),
-                "class":"memory",
-                'physid':ram.PartNumber,
-                "units":"gigabytes",
-                'Capacity': capacity,
-                'vendor': ram.Manufacturer,
-                'Speed': speed,
-                'FormFactor': form_factor
+                "id": ram.Tag.strip().replace(" ", "_"),
+                "class": "memory",
+                "physid": ram.PartNumber,
+                "units": "gigabytes",
+                "Capacity": capacity,
+                "vendor": ram.Manufacturer,
+                "Speed": speed,
+                "FormFactor": form_factor,
             }
             ram_modules.append(ram_module)
     return ram_modules
+
+
+def get_system_info() -> dict:
+    system_info = {
+        "os": get_os_info(),
+        "cpu": get_cpu_info(),
+        "memory": get_ram_info(),
+        "gpu": get_gpu_info(),
+    }
+    return system_info
+
+
+if __name__ == "__main__":
+    system_info = get_system_info()
+    print(dumps(system_info, indent=4))
