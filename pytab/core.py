@@ -243,6 +243,11 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
     )  # obtain list of (supported) Platforms + ID's
 
     platformID = hwi.MatchID(platforms, 0)
+
+    click.echo("Obtaining System Information...", nl=False)
+    system_info = hwi.get_system_info()
+    click.echo(" success!")
+
     valid, server_data = api.getTestData(platformID, platforms, server_url)
     if not valid:
         click.echo(f"Cancled: {server_data}")
@@ -325,7 +330,12 @@ def cli(ffmpeg_path: str, video_path: str, server_url: str, debug_flag: bool) ->
                     test_data["results"] = result
 
                     benchmark_data.append(test_data)
-    click.echo(dumps(benchmark_data, indent=4))
+    result_data = {
+        "token" : "not_provided_yet",
+        "hwinfo" : system_info,
+        "tests" : benchmark_data
+    }
+    click.echo(dumps(result_data, indent=4))
 
 
 def main():
