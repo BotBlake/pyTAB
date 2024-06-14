@@ -18,6 +18,7 @@
 #
 ##########################################################################################
 import platform
+import cpuinfo
 if platform.system() == "Windows":
     import wmi
 
@@ -85,3 +86,24 @@ def get_gpu_info():
     else:
         print("Linux Hardware information not yet supported")
     return gpu_elements
+
+def get_cpu_info():
+    cpu_info = cpuinfo.get_cpu_info()
+    cpu_elements = list()
+    vendor = cpu_info["vendor_id_raw"]
+    if "intel" in vendor.lower():
+        vendor = "Intel"
+    elif "amd" in vendor.lower() or "advanced micro devices" in vendor.lower():
+        vendor = "Amd"
+
+    cpu_element = {
+        "product": cpu_info["brand_raw"],
+        "vendor" : vendor,
+        "cores" : cpu_info["count"],
+        "architecture" : cpu_info["arch_string_raw"],
+        "hz_advertised" : cpu_info["hz_advertised"][0],
+        "capabilities" : cpu_info["flags"]
+    }
+    cpu_elements.append(cpu_element)
+
+    return cpu_elements
