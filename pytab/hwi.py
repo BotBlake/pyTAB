@@ -119,7 +119,7 @@ def get_cpu_info() -> list:
         "cores": cpu_info["count"],
         "architecture": cpu_info["arch_string_raw"],
         "hz_advertised": cpu_info["hz_advertised"][0],
-        "capabilities": cpu_info["flags"],
+        # "capabilities": cpu_info["flags"],  <- Temporarily Ignoring CPU Features
     }
     cpu_elements.append(cpu_element)
 
