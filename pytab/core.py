@@ -273,13 +273,13 @@ def cli(
         server_url
     )  # obtain list of (supported) Platforms + ID's
 
-    platformID = hwi.MatchID(platforms, 0)
+    platform_id = hwi.match_id(platforms)
 
     click.echo("| Obtaining System Information...", nl=False)
     system_info = hwi.get_system_info()
     click.echo(" success!")
 
-    valid, server_data = api.getTestData(platformID, platforms, server_url)
+    valid, server_data = api.getTestData(platform_id, platforms, server_url)
     if not valid:
         click.echo(f"Cancled: {server_data}")
         exit()

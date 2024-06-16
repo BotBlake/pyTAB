@@ -25,11 +25,10 @@ if platform.system() == "Windows":
     import wmi
 
 
-def MatchID(platforms: list, dummy_id: str) -> str:
+def match_id(platforms: list) -> str:
     for element in platforms:
         if platform.system().lower() == element["type"].lower():
             return element["id"]
-    return None
 
 
 def get_os_info() -> dict:
