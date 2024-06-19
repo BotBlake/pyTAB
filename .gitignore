@@ -8,3 +8,5 @@ output.json
 
 #Poetry builds
 /dist/*
+
+.idea/*

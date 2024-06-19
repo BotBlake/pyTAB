@@ -1,4 +1,4 @@
----
+fail_fast: true
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.2.0
@@ -6,6 +6,13 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
         args: [--maxkb=4096]
+  - repo: local
+    hooks:
+      - id: black
+        name: black
+        entry: poetry run black
+        language: system
+        types: [ file, python ]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.3.3
     hooks:
