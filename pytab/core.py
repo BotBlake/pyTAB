@@ -18,15 +18,16 @@
 #
 ##########################################################################################
 import os
-import click
-from pytab import worker, api, hwi
-from hashlib import sha256
-from requests import get as reqGet
-from json import dumps, dump
-
-from shutil import rmtree
-import zipfile
 import tarfile
+import zipfile
+from hashlib import sha256
+from json import dump, dumps
+from shutil import rmtree
+
+import click
+from requests import get as reqGet
+
+from pytab import api, hwi, worker
 
 placebo_cmd = [
     "{ffmpeg}",
@@ -273,7 +274,7 @@ def cli(
         server_url
     )  # obtain list of (supported) Platforms + ID's
 
-    platform_id = hwi.match_id(platforms)
+    platform_id = hwi.get_platform_id(platforms)
 
     click.echo("| Obtaining System Information...", nl=False)
     system_info = hwi.get_system_info()

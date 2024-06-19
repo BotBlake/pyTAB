@@ -18,14 +18,15 @@
 #
 ##########################################################################################
 import platform
-import cpuinfo
 from json import dumps
+
+import cpuinfo
 
 if platform.system() == "Windows":
     import wmi
 
 
-def match_id(platforms: list) -> str:
+def get_platform_id(platforms: list) -> str:
     for element in platforms:
         if platform.system().lower() == element["type"].lower():
             return element["id"]
@@ -98,8 +99,10 @@ def get_gpu_info() -> list:
                 "configuration": configuration,
             }
             gpu_elements.append(gpu_element)
-    else:
+    elif platform.system() == "Linux":
         print("Linux Hardware information not yet supported")
+    else:
+        print("Unsupported OS, Hardware information not supported")
     return gpu_elements
 
 
