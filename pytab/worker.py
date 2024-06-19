@@ -18,10 +18,11 @@
 #
 ##########################################################################################
 
-import click
-import subprocess
-import re
 import concurrent.futures
+import re
+import subprocess
+
+import click
 
 
 def run_ffmpeg(pid: int, ffmpeg_cmd: str) -> tuple:  # Process ID,
