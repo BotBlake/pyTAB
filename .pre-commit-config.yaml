@@ -13,6 +13,11 @@ repos:
         entry: poetry run black
         language: system
         types: [ file, python ]
+      - id: isort
+        name: isort
+        entry: poetry run isort
+        language: system
+        types: [ file, python ]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.3.3
     hooks:
