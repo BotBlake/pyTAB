@@ -58,7 +58,6 @@ def get_os_info() -> dict:
                 for line in f:
                     key, value = line.strip().split("=", 1)
                     value = value.strip('"')
-                    print(f"Key: {key} -- Value: {value}")
                     if key.lower() in required:
                         os_element[key.lower()] = value
         except FileNotFoundError:
