@@ -20,11 +20,11 @@
 import platform
 from json import dumps
 
+import click
 import cpuinfo
 
 if platform.system() == "Windows":
     import wmi
-
 
 def get_platform_id(platforms: list) -> str:
     for element in platforms:
@@ -99,9 +99,17 @@ def get_gpu_info() -> list:
             }
             gpu_elements.append(gpu_element)
     elif platform.system() == "Linux":
-        print("Linux Hardware information not yet supported")
+        click.echo(" Error")
+        click.echo()
+        click.echo("ERROR: Linux Hardware information not yet supported", err=True)
+        click.pause("Press any key to exit")
+        exit()
     else:
-        print("Unsupported OS, Hardware information not supported")
+        click.echo("Error")
+        click.echo()
+        click.echo("ERROR: Unsupported OS, Hardware information not supported", err=True)
+        click.pause("Press any key to exit")
+        exit()
     return gpu_elements
 
 
