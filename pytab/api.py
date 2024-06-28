@@ -17,6 +17,8 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 ##########################################################################################
+from json import JSONDecodeError, load
+
 import click
 import requests
 
@@ -47,6 +49,29 @@ def getTestData(platformID: str, platforms_data: list, server_url: str) -> tuple
     # If Return Code 429, message = retry_after - header
     valid = True
     click.echo("| Loading tests... ", nl=False)
+
+    # DevMode File Loading
+    if platformID == "local" and platforms_data == "local":
+        try:
+            with open(server_url, "r") as file:
+                data = load(file)
+                click.echo(" success!")
+                return valid, data
+        except JSONDecodeError:
+            click.echo(" Error")
+            click.echo()
+            click.echo(
+                "ERROR: Failed to decode JSON. Please check the file format.", err=True
+            )
+            click.pause("Press any key to exit")
+            exit()
+        except Exception as e:
+            click.echo(" Error")
+            click.echo()
+            click.echo(f"ERROR: {e}", err=True)
+            exit()
+        return False, None
+
     current_platform = None
     for platform in platforms_data:
         if platform["id"] == platformID and platform["supported"]:

@@ -269,12 +269,32 @@ def cli(
     debug = debug_flag
 
     click.echo()
+    if debug_flag:
+        click.echo(
+            click.style("Dev Mode", bg="magenta", fg="white")
+            + ": Special Features and Output enabled  "
+            + click.style("DO NOT UPLOAD!", fg="red")
+        )
+        click.echo()
     click.echo(click.style("System Initialization", bold=True))
-    platforms = api.getPlatform(
-        server_url
-    )  # obtain list of (supported) Platforms + ID's
 
-    platform_id = hwi.get_platform_id(platforms)
+    if not server_url.startswith("http") and debug_flag:
+        if os.path.exists(server_url):
+            click.echo(
+                click.style("|", bg="magenta", fg="white") + " Using local test-file"
+            )
+            platforms = "local"
+            platform_id = "local"
+        else:
+            click.echo()
+            click.echo("ERROR: Invalid Server URL", err=True)
+            click.pause("Press any key to exit")
+            exit()
+    else:
+        platforms = api.getPlatform(
+            server_url
+        )  # obtain list of (supported) Platforms + ID's
+        platform_id = hwi.get_platform_id(platforms)
 
     click.echo("| Obtaining System Information...", nl=False)
     system_info = hwi.get_system_info()
