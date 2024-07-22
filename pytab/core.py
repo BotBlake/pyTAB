@@ -256,11 +256,12 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     help="Enable additional debug output",
 )
 @click.option(
-    "--debug",
-    "debug_flag",
-    is_flag=True,
+    "--gpu",
+    "gpu_id",
+    type=int,
     default=False,
-    help="Enable additional debug output",
+    required=False,
+    help="Select which gpu to use for testing",
 )
 def cli(
     ffmpeg_path: str,
@@ -309,7 +310,7 @@ def cli(
 
     # Logic for GPU Selection
     gpus = system_info["gpu"]["gpu_elements"]
-    if len(gpus) > 1:
+    if len(gpus) > 1 and "gpu_id" in globals():
         click.echo("| Multiple GPU's detected")
         for gpu in gpus:
             click.echo(f"| {gpu["id"]}: {gpu["name"]} ")
@@ -317,9 +318,16 @@ def cli(
             f"| please select a gpu id\n| Must be less than {len(gpus)}", type=int
         )
         if gpu_id > len(gpus):
-            click.echo("| Selection was not in range")
+            click.echo("| GPU selection was not in range")
             gpu_id = click.prompt(
-                "| Please try again\n| Must be less than {len(gpus)}", type=int
+                f"| Please try again\n| Must be less than {len(gpus)}", type=int
+            )
+        gpu_ind = gpu_id - 1
+    elif "gpu_id" in globals() and len(gpus) > 1:
+        if gpu_id > len(gpus):
+            click.echo("| GPU selection was not in range")
+            gpu_id = click.prompt(
+                f"| Please try again\n| Must be less than {len(gpus)}", type=int
             )
         gpu_ind = gpu_id - 1
     else:
