@@ -45,7 +45,6 @@ def getPlatform(server_url: str) -> list:
 
 
 def getTestData(platformID: str, platforms_data: list, server_url: str) -> tuple:
-    # All this will be replaced by actual API code.
     # If Return Code 429, message = retry_after - header
     valid = True
     click.echo("| Loading tests... ", nl=False)
