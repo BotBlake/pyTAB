@@ -310,7 +310,7 @@ def cli(
 
     # Logic for GPU Selection
     gpus = system_info["gpu"]["gpu_elements"]
-    if len(gpus) > 1 and "gpu_id" in globals():
+    if len(gpus) > 1 and "gpu_id" not in globals():
         click.echo("| Multiple GPU's detected")
         for gpu in gpus:
             click.echo(f"| {gpu["id"]}: {gpu["name"]} ")
