@@ -255,6 +255,13 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     default=False,
     help="Enable additional debug output",
 )
+@click.option(
+    "--debug",
+    "debug_flag",
+    is_flag=True,
+    default=False,
+    help="Enable additional debug output",
+)
 def cli(
     ffmpeg_path: str,
     video_path: str,
@@ -299,6 +306,25 @@ def cli(
     click.echo("| Obtaining System Information...", nl=False)
     system_info = hwi.get_system_info()
     click.echo(" success!")
+
+    # Logic for GPU Selection
+    gpus = system_info["gpu"]["gpu_elements"]
+    if len(gpus) > 1:
+        click.echo("| Multiple GPU's detected")
+        for gpu in gpus:
+            click.echo(f"| {gpu["id"]}: {gpu["name"]} ")
+        gpu_id = click.prompt(
+            f"| please select a gpu id\n| Must be less than {len(gpus)}", type=int
+        )
+        if gpu_id > len(gpus):
+            click.echo("| Selection was not in range")
+            gpu_id = click.prompt(
+                "| Please try again\n| Must be less than {len(gpus)}", type=int
+            )
+        gpu_ind = gpu_id - 1
+    else:
+        gpu_id = 1
+        gpu_ind = 0
 
     valid, server_data = api.getTestData(platform_id, platforms, server_url)
     if not valid:
@@ -372,7 +398,7 @@ def cli(
                 if command["type"] in supported_types:
                     click.echo(f"> > > Current Device: {command['type']}")
                     arguments = command["args"]
-                    arguments = arguments.format(video_file=current_file, gpu=0)
+                    arguments = arguments.format(video_file=current_file, gpu=gpu_ind)
                     test_cmd = f"{ffmpeg_binary} {arguments}"
 
                     valid, runs, result = benchmark(test_cmd)
@@ -380,7 +406,7 @@ def cli(
                     test_data["id"] = test["id"]
                     test_data["type"] = command["type"]
                     if command["type"] != "cpu":
-                        test_data["selected_gpu"] = 1
+                        test_data["selected_gpu"] = gpu_id
                         test_data["selected_cpu"] = None
                     else:
                         test_data["selected_gpu"] = None
