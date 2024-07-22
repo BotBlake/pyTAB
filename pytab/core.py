@@ -259,7 +259,6 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     "--gpu",
     "gpu_id",
     type=int,
-    default=False,
     required=False,
     help="Select which gpu to use for testing",
 )
