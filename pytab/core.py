@@ -448,11 +448,11 @@ def cli(
                     test_data["id"] = test["id"]
                     test_data["type"] = command["type"]
                     if command["type"] != "cpu":
-                        test_data["selected_gpu"] = 1
+                        test_data["selected_gpu"] = gpu_idx
                         test_data["selected_cpu"] = None
                     else:
                         test_data["selected_gpu"] = None
-                        test_data["selected_cpu"] = 1
+                        test_data["selected_cpu"] = 0
                     test_data["runs"] = runs
                     test_data["results"] = result
 
