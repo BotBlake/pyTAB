@@ -49,11 +49,10 @@ _Since a lot of Hardware recognition is not yet implemented for Linux based Syst
 
 - Use Windows 🗿
 
-### Software Limits
+### Hardware Control
 
-_To reduce Test Runtime (and because proper support isnt yet implemented, there are a few limitations on what devices pyTAB uses at the moment)_
+_To reduce Test Runtime you can disable certain hardware reducing the number of tests you run._
 
-- Only NVIDIA GPUs supported
-- CPU Tests _(can be disabled manually)_
-- No full Support for AMD / Intel GPU's yet _(may work when enabled manually)_
-- Script will always use the first GPU that it can find
+- CPU based tests can be disabled using the `--nocpu` flag
+- GPU based tests can be disabled using the `--gpu 0` option or by selecting 0 in the interactive GPU selector
+- If the CPU and GPU are disabled the program will error out saying "ERROR: All Hardware Disabled"
