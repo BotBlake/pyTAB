@@ -328,7 +328,7 @@ def cli(
     # GPU Logic
     gpus = system_info["gpu"]
 
-    if len(gpus) > 1 and not gpu_input:
+    if len(gpus) > 1 and gpu_input is None:
         click.echo("\\")
         click.echo(" \\")
         click.echo("  \\_")
@@ -346,11 +346,13 @@ def cli(
         click.echo("/")
     # checks to see if the flag or the selector were used
     # if not assigns input of the first GPU
-    elif not gpu_input:
+    elif gpu_input is None:
         gpu_input = 1
 
     # Error if gpu_input is out of range
-    if not (0 <= gpu_input < len(gpus)):
+    print(len(gpus))
+    if not (0 <= gpu_input <= len(gpus)):
+        click.echo()
         click.echo("ERROR: Invalid GPU Input", err=True)
         click.pause("Press any key to exit")
         exit()
@@ -363,6 +365,7 @@ def cli(
 
     # Error if all hardware disabled
     if gpu_input == 0 and disable_cpu:
+        click.echo()
         click.echo("ERROR: All Hardware Disabled", err=True)
         click.pause("Press any key to exit")
         exit()

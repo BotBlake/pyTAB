@@ -87,7 +87,7 @@ def get_gpu_info() -> list:
                 "driver": gpu.DriverVersion.strip(),
             }
 
-            vendor = gpu.AdapterCompatibility.strip()
+            vendor = gpu.AdapterCompatibility.strip().lower()
             gpu_element = {
                 "id": f"GPU{i+1}",
                 "class": "display",
