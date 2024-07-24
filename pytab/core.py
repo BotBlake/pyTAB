@@ -249,6 +249,22 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     help="Path to the output JSON file.",
 )
 @click.option(
+    "--gpu",
+    "gpu_input",
+    type=int,
+    required=False,
+    help="Select which gpu to use for testing",
+)
+@click.option(
+    "--nocpu",
+    "disable_cpu",
+    type=bool,
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Select whether or not to use your cpu(s) for testing",
+)
+@click.option(
     "--debug",
     "debug_flag",
     is_flag=True,
@@ -260,6 +276,8 @@ def cli(
     video_path: str,
     server_url: str,
     output_path: str,
+    gpu_input: int,
+    disable_cpu: bool,
     debug_flag: bool,
 ) -> None:
     """
@@ -299,6 +317,59 @@ def cli(
     click.echo("| Obtaining System Information...", nl=False)
     system_info = hwi.get_system_info()
     click.echo(" success!")
+
+    # Logic for Hardware Selection
+    supported_types = []
+
+    # CPU Logic
+    if not disable_cpu:
+        supported_types.append("cpu")
+
+    # GPU Logic
+    gpus = system_info["gpu"]
+
+    if len(gpus) > 1 and gpu_input is None:
+        click.echo("\\")
+        click.echo(" \\")
+        click.echo("  \\_")
+        click.echo("    Multiple GPU's detected.")
+        click.echo("    Please select one to continue:")
+        click.echo()
+        click.echo("    | 0: No GPU tests")
+        for i, gpu in enumerate(gpus, 1):
+            click.echo(f"    | {i}: {gpu["product"]}, {gpu["vendor"]}")
+        click.echo()
+        gpu_input = click.prompt("    GPU input", type=int)
+        click.echo("   _")
+        click.echo("  /")
+        click.echo(" /")
+        click.echo("/")
+    # checks to see if the flag or the selector were used
+    # if not assigns input of the first GPU
+    elif gpu_input is None:
+        gpu_input = 1
+
+    # Error if gpu_input is out of range
+    if not (0 <= gpu_input <= len(gpus)):
+        click.echo()
+        click.echo("ERROR: Invalid GPU Input", err=True)
+        click.pause("Press any key to exit")
+        exit()
+
+    gpu_idx = gpu_input - 1
+
+    # Appends the selected GPU to supported types
+    if gpu_input != 0:
+        supported_types.append(gpus[gpu_idx]["vendor"])
+
+    # Error if all hardware disabled
+    if gpu_input == 0 and disable_cpu:
+        click.echo()
+        click.echo("ERROR: All Hardware Disabled", err=True)
+        click.pause("Press any key to exit")
+        exit()
+
+    # Stop Hardware Selection logic
 
     valid, server_data = api.getTestData(platform_id, platforms, server_url)
     if not valid:
@@ -365,14 +436,10 @@ def cli(
             commands = test["arguments"]
             for command in commands:
                 test_data = {}
-                supported_types = [
-                    "nvidia",
-                    "cpu",
-                ]  # reduced, so that development-tests finish faster
                 if command["type"] in supported_types:
                     click.echo(f"> > > Current Device: {command['type']}")
                     arguments = command["args"]
-                    arguments = arguments.format(video_file=current_file, gpu=0)
+                    arguments = arguments.format(video_file=current_file, gpu=gpu_idx)
                     test_cmd = f"{ffmpeg_binary} {arguments}"
 
                     valid, runs, result = benchmark(test_cmd)
@@ -380,11 +447,11 @@ def cli(
                     test_data["id"] = test["id"]
                     test_data["type"] = command["type"]
                     if command["type"] != "cpu":
-                        test_data["selected_gpu"] = 1
+                        test_data["selected_gpu"] = gpu_idx
                         test_data["selected_cpu"] = None
                     else:
                         test_data["selected_gpu"] = None
-                        test_data["selected_cpu"] = 1
+                        test_data["selected_cpu"] = 0
                     test_data["runs"] = runs
                     test_data["results"] = result
 
