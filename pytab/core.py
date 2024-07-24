@@ -350,7 +350,6 @@ def cli(
         gpu_input = 1
 
     # Error if gpu_input is out of range
-    print(len(gpus))
     if not (0 <= gpu_input <= len(gpus)):
         click.echo()
         click.echo("ERROR: Invalid GPU Input", err=True)
