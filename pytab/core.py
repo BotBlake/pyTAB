@@ -146,13 +146,14 @@ def unpackArchive(archive_path, target_path):
     click.echo(" success!")
 
 
-def benchmark(ffmpeg_cmd: str) -> tuple:
+def benchmark(ffmpeg_cmd: str, debug_flag: bool) -> tuple:
     runs = []
     total_workers = 1
     run = True
     last_Speed = -0.5  # to Assure first worker always has the required difference
     failure_reason = []
-    click.echo(f"> > > > Workers: {total_workers}, Last Speed: 0")
+    if debug_flag:
+        click.echo(f"> > > > Workers: {total_workers}, Last Speed: 0")
 
     while run:
         output = worker.workMan(total_workers, ffmpeg_cmd)
@@ -170,8 +171,12 @@ def benchmark(ffmpeg_cmd: str) -> tuple:
             runs.append(output[1])
             total_workers += 1
             last_Speed = output[1]["speed"]
-            click.echo(f"> > > > Workers: {total_workers}, Last Speed: {last_Speed}")
-
+            if debug_flag:
+                click.echo(
+                    f"> > > > Workers: {total_workers}, Last Speed: {last_Speed}"
+                )
+    if debug_flag:
+        click.echo(f"> > > > Failed: {failure_reason}")
     if len(runs) > 0:
         result = {
             "max_streams": runs[(len(runs)) - 1]["workers"],
@@ -422,19 +427,22 @@ def cli(
     benchmark_data = []
     click.echo("Starting Benchmark...")
     for file in files:  # File Benchmarking Loop
-        click.echo(f"| Current File: {file['name']}")
+        if debug_flag:
+            click.echo(f"| Current File: {file['name']}")
         filename = os.path.basename(file["source_url"])
         current_file = f"{video_path}/{filename}"
         tests = file["data"]
         for test in tests:
-            click.echo(
-                f"> > Current Test: {test['from_resolution']} - {test['to_resolution']}"
-            )
+            if debug_flag:
+                click.echo(
+                    f"> > Current Test: {test['from_resolution']} - {test['to_resolution']}"
+                )
             commands = test["arguments"]
             for command in commands:
                 test_data = {}
                 if command["type"] in supported_types:
-                    click.echo(f"> > > Current Device: {command['type']}")
+                    if debug_flag:
+                        click.echo(f"> > > Current Device: {command['type']}")
                     arguments = command["args"]
                     arguments = arguments.format(video_file=current_file, gpu=gpu_idx)
                     test_cmd = f"{ffmpeg_binary} {arguments}"
