@@ -146,7 +146,7 @@ def unpackArchive(archive_path, target_path):
     click.echo(" success!")
 
 
-def benchmark(ffmpeg_cmd: str, debug_flag: bool) -> tuple:
+def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
     runs = []
     total_workers = 1
     run = True
@@ -154,8 +154,12 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool) -> tuple:
     failure_reason = []
     if debug_flag:
         click.echo(f"> > > > Workers: {total_workers}, Last Speed: 0")
-
     while run:
+        if not debug_flag:
+            prog_bar.label = (
+                f"Testing | Workers: {total_workers} | Last Speed: {last_Speed}"
+            )
+            prog_bar.render_progress()
         output = worker.workMan(total_workers, ffmpeg_cmd)
         # First check if we continue Running:
         if output[0]:
@@ -178,14 +182,19 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool) -> tuple:
     if debug_flag:
         click.echo(f"> > > > Failed: {failure_reason}")
     if len(runs) > 0:
+        max_streams = runs[(len(runs)) - 1]["workers"]
         result = {
-            "max_streams": runs[(len(runs)) - 1]["workers"],
+            "max_streams": max_streams,
             "failure_reasons": failure_reason,
             "single_worker_speed": runs[(len(runs)) - 1]["speed"],
             "single_worker_rss_kb": runs[(len(runs)) - 1]["rss_kb"],
         }
+        prog_bar.label = (
+            f"Test done | Workers: {max_streams} | Failure: {failure_reason[0]}"
+        )
         return True, runs, result
     else:
+        prog_bar.label = "Test skipped | Workers: 0 |"
         return False, runs, {}
 
 
@@ -424,44 +433,65 @@ def cli(
         click.echo("Exiting...")
         exit()
 
+    # Count ammount of tests required to do:
+    test_arg_count = 0
+    if not debug_flag:
+        for file in files:
+            tests = file["data"]
+            for test in tests:
+                commands = test["arguments"]
+                for command in commands:
+                    if command["type"] in supported_types:
+                        test_arg_count += 1
+    click.echo(f"We will do {test_arg_count} tests.")
+
     benchmark_data = []
-    click.echo("Starting Benchmark...")
-    for file in files:  # File Benchmarking Loop
-        if debug_flag:
-            click.echo(f"| Current File: {file['name']}")
-        filename = os.path.basename(file["source_url"])
-        current_file = f"{video_path}/{filename}"
-        tests = file["data"]
-        for test in tests:
+    click.echo()
+
+    with click.progressbar(
+        length=test_arg_count, label="Starting Benchmark..."
+    ) as prog_bar:
+        for file in files:  # File Benchmarking Loop
             if debug_flag:
-                click.echo(
-                    f"> > Current Test: {test['from_resolution']} - {test['to_resolution']}"
-                )
-            commands = test["arguments"]
-            for command in commands:
-                test_data = {}
-                if command["type"] in supported_types:
-                    if debug_flag:
-                        click.echo(f"> > > Current Device: {command['type']}")
-                    arguments = command["args"]
-                    arguments = arguments.format(video_file=current_file, gpu=gpu_idx)
-                    test_cmd = f"{ffmpeg_binary} {arguments}"
+                click.echo()
+                click.echo(f"| Current File: {file['name']}")
+            filename = os.path.basename(file["source_url"])
+            current_file = f"{video_path}/{filename}"
+            tests = file["data"]
+            for test in tests:
+                if debug_flag:
+                    click.echo(
+                        f"> > Current Test: {test['from_resolution']} - {test['to_resolution']}"
+                    )
+                commands = test["arguments"]
+                for command in commands:
+                    test_data = {}
+                    if command["type"] in supported_types:
+                        if debug_flag:
+                            click.echo(f"> > > Current Device: {command['type']}")
+                        arguments = command["args"]
+                        arguments = arguments.format(
+                            video_file=current_file, gpu=gpu_idx
+                        )
+                        test_cmd = f"{ffmpeg_binary} {arguments}"
 
-                    valid, runs, result = benchmark(test_cmd)
+                        valid, runs, result = benchmark(test_cmd, debug_flag, prog_bar)
+                        if not debug_flag:
+                            prog_bar.update(1)
 
-                    test_data["id"] = test["id"]
-                    test_data["type"] = command["type"]
-                    if command["type"] != "cpu":
-                        test_data["selected_gpu"] = gpu_idx
-                        test_data["selected_cpu"] = None
-                    else:
-                        test_data["selected_gpu"] = None
-                        test_data["selected_cpu"] = 0
-                    test_data["runs"] = runs
-                    test_data["results"] = result
+                        test_data["id"] = test["id"]
+                        test_data["type"] = command["type"]
+                        if command["type"] != "cpu":
+                            test_data["selected_gpu"] = gpu_idx
+                            test_data["selected_cpu"] = None
+                        else:
+                            test_data["selected_gpu"] = None
+                            test_data["selected_cpu"] = 0
+                        test_data["runs"] = runs
+                        test_data["results"] = result
 
-                    if len(runs) >= 1:
-                        benchmark_data.append(test_data)
+                        if len(runs) >= 1:
+                            benchmark_data.append(test_data)
     click.echo("")  # Displaying Prompt, before attempting to output / build final dict
     click.echo("Benchmark Done. Writing file to Output.")
     result_data = {
