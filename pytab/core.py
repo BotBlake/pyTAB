@@ -152,29 +152,26 @@ def benchmark(ffmpeg_cmd: str) -> tuple:
     run = True
     last_Speed = -0.5  # to Assure first worker always has the required difference
     failure_reason = []
+    click.echo(f"> > > > Workers: {total_workers}, Last Speed: 0")
 
-    with click.progressbar(
-        length=0, label=f"Workers: {total_workers}, Speed: 0.0"
-    ) as progress_bar:
-        while run:
-            output = worker.workMan(total_workers, ffmpeg_cmd)
-            # First check if we continue Running:
-            if output[0]:
-                run = False
-                failure_reason.append(output[1])
-            elif output[1]["speed"] < 1:
-                run = False
-                failure_reason.append("performance")
-            # elif output[1]["speed"]-last_Speed < 0.5:
-            #    run = False
-            #    failure_reason.append("failed_inconclusive")
-            else:  # When no failure happened
-                runs.append(output[1])
-                total_workers += 1
-                last_Speed = output[1]["speed"]
-                progress_bar.label = f"Workers: {total_workers}, Speed: {last_Speed}"
-            progress_bar.update(1)
-        progress_bar.update(1)
+    while run:
+        output = worker.workMan(total_workers, ffmpeg_cmd)
+        # First check if we continue Running:
+        if output[0]:
+            run = False
+            failure_reason.append(output[1])
+        elif output[1]["speed"] < 1:
+            run = False
+            failure_reason.append("performance")
+        # elif output[1]["speed"]-last_Speed < 0.5:
+        #    run = False
+        #    failure_reason.append("failed_inconclusive")
+        else:  # When no failure happened
+            runs.append(output[1])
+            total_workers += 1
+            last_Speed = output[1]["speed"]
+            click.echo(f"> > > > Workers: {total_workers}, Last Speed: {last_Speed}")
+
     if len(runs) > 0:
         result = {
             "max_streams": runs[(len(runs)) - 1]["workers"],
@@ -425,7 +422,7 @@ def cli(
     benchmark_data = []
     click.echo("Starting Benchmark...")
     for file in files:  # File Benchmarking Loop
-        click.echo(f"> Current File: {file['name']}")
+        click.echo(f"| Current File: {file['name']}")
         filename = os.path.basename(file["source_url"])
         current_file = f"{video_path}/{filename}"
         tests = file["data"]
