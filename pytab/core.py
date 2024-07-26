@@ -150,15 +150,14 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
     runs = []
     total_workers = 1
     run = True
-    last_Speed = -0.5  # to Assure first worker always has the required difference
+    last_speed = -0.5  # to Assure first worker always has the required difference
+    formatted_last_speed = "00.00"
     failure_reason = []
     if debug_flag:
-        click.echo(f"> > > > Workers: {total_workers}, Last Speed: 0")
+        click.echo(f"> > > > Workers: {total_workers}, Last Speed: {last_speed}")
     while run:
         if not debug_flag:
-            prog_bar.label = (
-                f"Testing | Workers: {total_workers} | Last Speed: {last_Speed}"
-            )
+            prog_bar.label = f"Testing | Workers: {total_workers:02d} | Last Speed: {formatted_last_speed}"
             prog_bar.render_progress()
         output = worker.workMan(total_workers, ffmpeg_cmd)
         # First check if we continue Running:
@@ -168,16 +167,17 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
         elif output[1]["speed"] < 1:
             run = False
             failure_reason.append("performance")
-        # elif output[1]["speed"]-last_Speed < 0.5:
+        # elif output[1]["speed"]-last_speed < 0.5:
         #    run = False
         #    failure_reason.append("failed_inconclusive")
         else:  # When no failure happened
             runs.append(output[1])
             total_workers += 1
-            last_Speed = output[1]["speed"]
+            last_speed = output[1]["speed"]
+            formatted_last_speed = f"{last_speed:05.2f}"
             if debug_flag:
                 click.echo(
-                    f"> > > > Workers: {total_workers}, Last Speed: {last_Speed}"
+                    f"> > > > Workers: {total_workers}, Last Speed: {last_speed}"
                 )
     if debug_flag:
         click.echo(f"> > > > Failed: {failure_reason}")
@@ -190,11 +190,11 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
             "single_worker_rss_kb": runs[(len(runs)) - 1]["rss_kb"],
         }
         prog_bar.label = (
-            f"Test done | Workers: {max_streams} | Failure: {failure_reason[0]}"
+            f"Done    | Workers: {max_streams} | Last Speed: {formatted_last_speed}"
         )
         return True, runs, result
     else:
-        prog_bar.label = "Test skipped | Workers: 0 |"
+        prog_bar.label = "Skipped | Workers: 00 | Last Speed: 00.00"
         return False, runs, {}
 
 
