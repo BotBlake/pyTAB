@@ -429,10 +429,6 @@ def cli(
     click.echo(click.style("Done", fg="green"))
     click.echo()
 
-    if not click.confirm("Do you want to continue?"):
-        click.echo("Exiting...")
-        exit()
-
     # Count ammount of tests required to do:
     test_arg_count = 0
     if not debug_flag:
@@ -444,6 +440,10 @@ def cli(
                     if command["type"] in supported_types:
                         test_arg_count += 1
     click.echo(f"We will do {test_arg_count} tests.")
+
+    if not click.confirm("Do you want to continue?"):
+        click.echo("Exiting...")
+        exit()
 
     benchmark_data = []
     click.echo()
