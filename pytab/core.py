@@ -162,7 +162,7 @@ def benchmark(ffmpeg_cmd: str) -> tuple:
             if output[0]:
                 run = False
                 failure_reason.append(output[1])
-            elif output[1]["speed"] < 1 & last_Speed > 2:
+            elif output[1]["speed"] < 1 and last_Speed > 2:
                 # last run was a jump of more then 1 so scale back for as long as you dont find a just right number of processors
                 last_Speed = output[1]["speed"]
                 total_workers -= 1
