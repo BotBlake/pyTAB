@@ -439,7 +439,7 @@ def cli(
                 for command in commands:
                     if command["type"] in supported_types:
                         test_arg_count += 1
-    click.echo(f"We will do {test_arg_count} tests.")
+        click.echo(f"We will do {test_arg_count} tests.")
 
     if not click.confirm("Do you want to continue?"):
         click.echo("Exiting...")
