@@ -164,6 +164,15 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
         if output[0]:
             run = False
             failure_reason.append(output[1])
+        elif output[1]["speed"] < 1 and last_speed > 2:
+            # last run was a jump of more then 1 so scale back for as long as you dont find a just right number of processors
+            last_speed = output[1]["speed"]
+            total_workers -= 1
+            formatted_last_speed = f"{last_speed:05.2f}"
+            if debug_flag:
+                click.echo(
+                    f"> > > > Scaling back to: {total_workers}, Last Speed: {last_speed}"
+                )
         elif output[1]["speed"] < 1:
             run = False
             failure_reason.append("performance")
@@ -172,8 +181,8 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
         #    failure_reason.append("failed_inconclusive")
         else:  # When no failure happened
             runs.append(output[1])
-            total_workers += 1
             last_speed = output[1]["speed"]
+            total_workers += int(last_speed)
             formatted_last_speed = f"{last_speed:05.2f}"
             if debug_flag:
                 click.echo(
