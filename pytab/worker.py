@@ -18,13 +18,14 @@
 #
 ##########################################################################################
 
-import click
-import subprocess
-import re
 import concurrent.futures
+import re
+import subprocess
+
+import click
 
 
-def run_ffmpeg(pid, ffmpeg_cmd):  # Process ID,
+def run_ffmpeg(pid: int, ffmpeg_cmd: str) -> tuple:  # Process ID,
     # click.echo(f"{pid} |> Running FFMPEG Process: {pid}")
     timeout = 120  # Stop any process that runs for more then 120sec
     failure_reason = None
@@ -41,7 +42,7 @@ def run_ffmpeg(pid, ffmpeg_cmd):  # Process ID,
         ffmpeg_stderr = process_output.stderr
 
         if retcode > 0:
-            click.echo(f"ERROR: {ffmpeg_stderr}")
+            # click.echo(f"ERROR: {ffmpeg_stderr}")    <- Silencing Output
             failure_reason = "generic_ffmpeg_failure"  # <-- HELP WANTED!
 
     except subprocess.TimeoutExpired:
@@ -56,8 +57,9 @@ def run_ffmpeg(pid, ffmpeg_cmd):  # Process ID,
     return ffmpeg_stderr, failure_reason
 
 
-def workMan(worker_count, ffmpeg_cmd):
+def workMan(worker_count: int, ffmpeg_cmd: str) -> tuple:
     raw_worker_data = {}
+    failure_reason = None
     # click.echo(f"> Run with {worker_count} Processes")
     with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
         futures = {
@@ -69,20 +71,14 @@ def workMan(worker_count, ffmpeg_cmd):
             try:
                 raw_worker_data[pid] = future.result()
                 # click.echo(f"> > > Finished Worker Process: {pid}")
+                if raw_worker_data[pid][1]:
+                    failure_reason = raw_worker_data[pid][1]
             except Exception as e:
                 print(f"Worker {pid} generated an exception: {e}")
 
-    for pid in range(worker_count):
-        worker_output = run_ffmpeg(
-            pid, ffmpeg_cmd
-        )  # Saving RAW-Data first, to save time during process-spawning
-        if worker_output[1]:
-            raw_worker_data = [
-                None
-            ]  # Deleting all the Raw Data, since run with failed Worker is not counted
-            failure_reason = worker_output[1]
-            continue
-        raw_worker_data[pid] = worker_output
+    if failure_reason:
+        raw_worker_data = None
+        # Deleting all the Raw Data, since run with failed Worker is not counted
 
     run_data_raw = []
     if raw_worker_data:  # If no run Failed
@@ -139,7 +135,7 @@ def workMan(worker_count, ffmpeg_cmd):
         return True, failure_reason
 
 
-def evaluateRunData(run_data_raw):
+def evaluateRunData(run_data_raw: list) -> dict:
     workers = len(run_data_raw)
 
     total_time = 0

@@ -18,18 +18,24 @@
 #
 ##########################################################################################
 import os
-import click
-from pytab import worker, api, hwi
+import tarfile
+import zipfile
 from hashlib import sha256
+from json import dump, dumps
+from shutil import rmtree
+
+import click
 from requests import get as reqGet
 
+from pytab import api, hwi, worker
+
 placebo_cmd = [
-    "./ffmpeg/ffmpeg.exe",
+    "{ffmpeg}",
     "-hide_banner",
     "-c:v",
     "h264",
     "-i",
-    "./videos/nvidia_s.mp4",
+    "{path}/jellyfish-40-mbps-hd-h264.mkv",
     "-c:v",
     "h264_nvenc",
     "-benchmark",
@@ -39,7 +45,33 @@ placebo_cmd = [
 ]
 
 
-def calculate_sha256(file_path):
+def match_hash(hash_dict: dict, output: bool) -> tuple:
+    supported_hashes = [
+        "sha256",
+    ]  # list of currently supported hashing methods
+
+    if not hash_dict:
+        if output:
+            click.echo(
+                "Note: "
+                + click.style("This file cannot be hash-verified!", fg="yellow")
+            )
+        return None, None
+
+    for hash in hash_dict:
+        if hash in supported_hashes:
+            if output:
+                click.echo(f"Note: Compatible hashing method found. Using {hash}")
+            return hash, hash_dict[hash]
+    if output:
+        click.echo(
+            "Note: "
+            + click.style("This Client cannot hash-verify this file!", fg="yellow")
+        )
+    return None, None
+
+
+def calculate_sha256(file_path: str) -> str:
     # Calculate SHA256 checksum of a file
     sha256_hash = sha256()
     with open(file_path, "rb") as f:
@@ -49,46 +81,81 @@ def calculate_sha256(file_path):
     return sha256_hash.hexdigest()
 
 
-def obtainSource(target_path: str, source_url: str, source_sha256: str) -> None:
+def obtainSource(
+    target_path: str, source_url: str, hash_dict: dict, notify_on_download: bool
+) -> tuple:
+    hash_algorithm, source_hash = match_hash(hash_dict, notify_on_download)
+
     target_path = os.path.realpath(target_path)  # Relative Path!
     filename = os.path.basename(source_url)  # Extract filename from the URL
     file_path = os.path.join(target_path, filename)  # path/filename
 
     if os.path.exists(file_path):  # if file already exists
-        existing_checksum = calculate_sha256(file_path)  # checksum validation
-        if (
-            existing_checksum == source_sha256 or source_sha256 is None
-        ):  # if valid/no sum
+        existing_checksum = None
+        if hash_algorithm == "sha256":
+            existing_checksum = calculate_sha256(file_path)  # checksum validation
+
+        if existing_checksum == source_hash or source_hash is None:  # if valid/no sum
             return True, file_path  # Checksum valid, no need to download again
         else:
             os.remove(file_path)  # Delete file if checksum doesn't match
+
+    # Create target path if non present
+    if not os.path.exists(target_path):
+        os.makedirs(target_path)
+
+    if notify_on_download:
+        click.echo("Downloading file...", nl=False)
 
     try:  # Download file
         response = reqGet(source_url)
         if response.status_code == 200:
             with open(file_path, "wb") as f:
                 f.write(response.content)
+            if notify_on_download:
+                click.echo(" success!")
         else:
             return False, response.status_code  # Unable to download file
     except Exception:
         return False, "Unknown Error!"  # Unable to download file
     downloaded_checksum = calculate_sha256(file_path)  # checksum validation
-    if downloaded_checksum == source_sha256 or source_sha256 is None:  # if valid/no sum
+    if downloaded_checksum == source_hash or source_hash is None:  # if valid/no sum
         return True, file_path  # Checksum valid
     else:
         os.remove(file_path)  # Delete file if checksum doesn't match
         return False, "Invalid Checksum!"  # Checksum invalid
 
 
-def benchmark(ffmpeg_cmd):
-    print("Benchmarking now...")
+def unpackArchive(archive_path, target_path):
+    if os.path.exists(target_path):
+        rmtree(target_path)
+        click.echo(
+            "INFO: "
+            + click.style("Replacing existing files with validated ones.", fg="cyan")
+        )
+    os.makedirs(target_path)
+
+    click.echo("Unpacking Archive...", nl=False)
+
+    if archive_path.endswith(".zip"):
+        with zipfile.ZipFile(archive_path, "r") as zip_ref:
+            zip_ref.extractall(target_path)
+    elif archive_path.endswith(".tar.gz"):
+        with tarfile.open(archive_path, "r:gz") as tar_ref:
+            tar_ref.extractall(target_path)
+    click.echo(" success!")
+
+
+def benchmark(ffmpeg_cmd: str) -> tuple:
     runs = []
-    total_workers = 9
+    total_workers = 1
     run = True
     last_Speed = -0.5  # to Assure first worker always has the required difference
     failure_reason = []
 
-    with click.progressbar(length=0, label="Workers: 1, Speed: 0.0") as progress_bar:
+    with click.progressbar(
+        length=0, label=f"Workers: {total_workers}, Speed: 0.0"
+    ) as progress_bar:
         while run:
             output = worker.workMan(total_workers, ffmpeg_cmd)
             # First check if we continue Running:
@@ -120,6 +187,21 @@ def benchmark(ffmpeg_cmd):
         return False, runs, {}
 
 
+def output_json(data, file_path):
+    # Create the directory if it doesn't exist
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+    # Write the data to the JSON file
+    if file_path:
+        with open(file_path, "w") as json_file:
+            dump(data, json_file, indent=4)
+        click.echo(f"Data successfully saved to {file_path}")
+    else:
+        click.echo()
+        click.echo("No output file specified. Writing to stdout.")
+        click.echo(dumps(data, indent=4))
+
+
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=120)
 
 
@@ -128,7 +210,10 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     "--ffmpeg",
     "ffmpeg_path",
     type=click.Path(
-        resolve_path=True, dir_okay=True, exists=True, writable=True, executable=True
+        resolve_path=True,
+        dir_okay=True,
+        writable=True,
+        executable=True,
     ),
     default="./ffmpeg",
     show_default=True,
@@ -141,15 +226,43 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     type=click.Path(
         resolve_path=True,
         dir_okay=True,
-        exists=True,
         writable=True,
         readable=True,
-        executable=False,
     ),
-    default="./ffmpeg",
+    default="./videos",
     show_default=True,
     required=False,
-    help="Path for JellyfinFFMPEG Download/execution",
+    help="Path for download of test files. (SSD required)",
+)
+@click.option(
+    "--server",
+    "server_url",
+    required=True,
+    help="Server URL for test data and result submition.",
+)
+@click.option(
+    "--output_path",
+    type=click.Path(),
+    default="./output.json",
+    show_default=True,
+    required=False,
+    help="Path to the output JSON file.",
+)
+@click.option(
+    "--gpu",
+    "gpu_input",
+    type=int,
+    required=False,
+    help="Select which gpu to use for testing",
+)
+@click.option(
+    "--nocpu",
+    "disable_cpu",
+    type=bool,
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Select whether or not to use your cpu(s) for testing",
 )
 @click.option(
     "--debug",
@@ -158,30 +271,200 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
     default=False,
     help="Enable additional debug output",
 )
-def cli(ffmpeg_path: str, video_path: str, debug_flag: bool) -> None:
+def cli(
+    ffmpeg_path: str,
+    video_path: str,
+    server_url: str,
+    output_path: str,
+    gpu_input: int,
+    disable_cpu: bool,
+    debug_flag: bool,
+) -> None:
     """
     Python Transcoding Acceleration Benchmark Client made for Jellyfin Hardware Survey
     """
     global debug
     debug = debug_flag
 
-    platforms = api.getPlatform()  # obtain list of (supported) Platforms + ID's
-    platformID = hwi.MatchID(platforms, 0)  # dummy: return = platforms[x]["id"]
-    valid, server_data = api.getTestData(platformID)
+    click.echo()
+    if debug_flag:
+        click.echo(
+            click.style("Dev Mode", bg="magenta", fg="white")
+            + ": Special Features and Output enabled  "
+            + click.style("DO NOT UPLOAD!", fg="red")
+        )
+        click.echo()
+    click.echo(click.style("System Initialization", bold=True))
+
+    if not server_url.startswith("http") and debug_flag:
+        if os.path.exists(server_url):
+            click.echo(
+                click.style("|", bg="magenta", fg="white") + " Using local test-file"
+            )
+            platforms = "local"
+            platform_id = "local"
+        else:
+            click.echo()
+            click.echo("ERROR: Invalid Server URL", err=True)
+            click.pause("Press any key to exit")
+            exit()
+    else:
+        platforms = api.getPlatform(
+            server_url
+        )  # obtain list of (supported) Platforms + ID's
+        platform_id = hwi.get_platform_id(platforms)
+
+    click.echo("| Obtaining System Information...", nl=False)
+    system_info = hwi.get_system_info()
+    click.echo(" success!")
+
+    # Logic for Hardware Selection
+    supported_types = []
+
+    # CPU Logic
+    if not disable_cpu:
+        supported_types.append("cpu")
+
+    # GPU Logic
+    gpus = system_info["gpu"]
+
+    if len(gpus) > 1 and gpu_input is None:
+        click.echo("\\")
+        click.echo(" \\")
+        click.echo("  \\_")
+        click.echo("    Multiple GPU's detected.")
+        click.echo("    Please select one to continue:")
+        click.echo()
+        click.echo("    | 0: No GPU tests")
+        for i, gpu in enumerate(gpus, 1):
+            click.echo(f"    | {i}: {gpu["product"]}, {gpu["vendor"]}")
+        click.echo()
+        gpu_input = click.prompt("    GPU input", type=int)
+        click.echo("   _")
+        click.echo("  /")
+        click.echo(" /")
+        click.echo("/")
+    # checks to see if the flag or the selector were used
+    # if not assigns input of the first GPU
+    elif gpu_input is None:
+        gpu_input = 1
+
+    # Error if gpu_input is out of range
+    if not (0 <= gpu_input <= len(gpus)):
+        click.echo()
+        click.echo("ERROR: Invalid GPU Input", err=True)
+        click.pause("Press any key to exit")
+        exit()
+
+    gpu_idx = gpu_input - 1
+
+    # Appends the selected GPU to supported types
+    if gpu_input != 0:
+        supported_types.append(gpus[gpu_idx]["vendor"])
+
+    # Error if all hardware disabled
+    if gpu_input == 0 and disable_cpu:
+        click.echo()
+        click.echo("ERROR: All Hardware Disabled", err=True)
+        click.pause("Press any key to exit")
+        exit()
+
+    # Stop Hardware Selection logic
+
+    valid, server_data = api.getTestData(platform_id, platforms, server_url)
     if not valid:
         click.echo(f"Cancled: {server_data}")
+        exit()
+    click.echo(click.style("Done", fg="green"))
+    click.echo()
 
-    #Downloading ffmpeg:
-    
+    # Download ffmpeg
+    ffmpeg_data = server_data["ffmpeg"]
+    click.echo(click.style("Loading ffmpeg", bold=True))
 
-    tests = server_data["tests"]
-    valid, runs, result = benchmark(placebo_cmd)
-    print()
-    print(("-" * 15) + "DEV-OUT" + ("-" * 40))
-    print(runs)
-    print("-" * 20)
-    print(result)
-    print(("-" * 15) + "DEV-END" + ("-" * 40))
+    ffmpeg_download = obtainSource(
+        ffmpeg_path, ffmpeg_data["ffmpeg_source_url"], ffmpeg_data["ffmpeg_hashs"], True
+    )
+
+    if ffmpeg_download[0] is False:
+        click.echo(f"An Error occured: {ffmpeg_download[1]}", err=True)
+        click.pause("Press any key to exit")
+        exit()
+
+    ffmpeg_files = f"{ffmpeg_path}/ffmpeg_files"
+    unpackArchive(ffmpeg_download[1], ffmpeg_files)
+    ffmpeg_binary = f"{ffmpeg_files}/ffmpeg"
+
+    click.echo(click.style("Done", fg="green"))
+    click.echo()
+
+    # Downloading Videos
+    files = server_data["tests"]
+    click.echo(click.style("Obtaining Test-Files:", bold=True))
+    for file in files:
+        name = os.path.basename(file["name"])
+        click.echo(f'| "{name}" -', nl=False)
+        success, output = obtainSource(
+            video_path, file["source_url"], file["source_hashs"], False
+        )
+        if success:
+            click.echo(" success!")
+        else:
+            click.echo(" Error")
+            click.echo("")
+            click.echo(f"The following Error occured: {output}", err=True)
+            click.pause("Press any key to exit")
+            exit()
+    click.echo(click.style("Done", fg="green"))
+    click.echo()
+
+    if not click.confirm("Do you want to continue?"):
+        click.echo("Exiting...")
+        exit()
+
+    benchmark_data = []
+    click.echo("Starting Benchmark...")
+    for file in files:  # File Benchmarking Loop
+        click.echo(f"> Current File: {file['name']}")
+        filename = os.path.basename(file["source_url"])
+        current_file = f"{video_path}/{filename}"
+        tests = file["data"]
+        for test in tests:
+            click.echo(
+                f"> > Current Test: {test['from_resolution']} - {test['to_resolution']}"
+            )
+            commands = test["arguments"]
+            for command in commands:
+                test_data = {}
+                if command["type"] in supported_types:
+                    click.echo(f"> > > Current Device: {command['type']}")
+                    arguments = command["args"]
+                    arguments = arguments.format(video_file=current_file, gpu=gpu_idx)
+                    test_cmd = f"{ffmpeg_binary} {arguments}"
+
+                    valid, runs, result = benchmark(test_cmd)
+
+                    test_data["id"] = test["id"]
+                    test_data["type"] = command["type"]
+                    if command["type"] != "cpu":
+                        test_data["selected_gpu"] = gpu_idx
+                        test_data["selected_cpu"] = None
+                    else:
+                        test_data["selected_gpu"] = None
+                        test_data["selected_cpu"] = 0
+                    test_data["runs"] = runs
+                    test_data["results"] = result
+
+                    if len(runs) >= 1:
+                        benchmark_data.append(test_data)
+    click.echo("")  # Displaying Prompt, before attempting to output / build final dict
+    click.echo("Benchmark Done. Writing file to Output.")
+    result_data = {
+        "token": server_data["token"],
+        "hwinfo": {"ffmpeg": ffmpeg_data, **system_info},
+        "tests": benchmark_data,
+    }
+    output_json(result_data, output_path)
 
 
 def main():
