@@ -161,18 +161,48 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
             prog_bar.render_progress()
         output = worker.workMan(total_workers, ffmpeg_cmd)
         # First check if we continue Running:
-        if output[0]:
+        # Stop when first run failed
+        if output[0] and total_workers == 1:
             run = False
             failure_reason.append(output[1])
-        elif output[1]["speed"] < 1 and last_speed > 2:
-            # last run was a jump of more then 1 so scale back for as long as you dont find a just right number of processors
+        # When run after scaleback succeded:
+        elif (last_speed < 1 and not output[0]) and last_speed != -0.5:
+            limited = False
+            if last_speed == -1:
+                limited = True
             last_speed = output[1]["speed"]
-            total_workers -= 1
             formatted_last_speed = f"{last_speed:05.2f}"
+            if debug_flag:
+                click.echo(
+                    f"> > > > Scaleback success! Limit: {limited}, Total Workers: {total_workers}, Speed: {last_speed}"
+                )
+            run = False
+
+            if limited:
+                failure_reason.append("limited")
+            else:
+                failure_reason.append("performance")
+        # Scaleback when fail on 1<workers (NvEnc Limit) or on Speed<1 with 1<last added workers or on last_Speed = Scaleback
+        elif (
+            (total_workers > 1 and output[0])
+            or (output[1]["speed"] < 1 and last_speed >= 2)
+            or (last_speed == -1)
+        ):
+            if output[0]:  # Assign variables depending on Scaleback reason
+                last_speed = -1
+                formatted_last_speed = "sclbk"
+            else:
+                last_speed = output[1]["speed"]
+                formatted_last_speed = f"{last_speed:05.2f}"
+            total_workers -= 1
             if debug_flag:
                 click.echo(
                     f"> > > > Scaling back to: {total_workers}, Last Speed: {last_speed}"
                 )
+        elif output[0] and total_workers == 0:  # Fail when infinite scaleback
+            run = False
+            failure_reason.append(output[1])
+            failure_reason.append("infinity_scaleback")
         elif output[1]["speed"] < 1:
             run = False
             failure_reason.append("performance")
