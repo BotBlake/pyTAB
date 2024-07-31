@@ -166,7 +166,7 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
             run = False
             failure_reason.append(output[1])
         # Scaleback when fail on 1<workers (NvEnc Limit) or on Speed<1 with 1<last added workers or on last_Speed = Scaleback
-        elif last_speed < 1 and not output[0]:
+        elif (last_speed < 1 and not output[0]) and last_speed != -0.5:
             limited = False
             if last_speed == -1:
                 limited = True
