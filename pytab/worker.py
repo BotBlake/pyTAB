@@ -36,6 +36,7 @@ def run_ffmpeg(pid: int, ffmpeg_cmd: list) -> tuple:  # Process ID,
             capture_output=True,
             universal_newlines=True,
             timeout=timeout,
+            text=True,
         )
 
         retcode = process_output.returncode

@@ -18,13 +18,26 @@
 #
 ##########################################################################################
 import platform
-from json import dumps
+import subprocess
+from json import dumps, loads
 
 import click
 import cpuinfo
 
 if platform.system() == "Windows":
     import wmi
+
+
+def run_lshw(hardware):
+    hw_obj = subprocess.run(
+        ["lshw", "-json", "-class", hardware],
+        text=True,
+        capture_output=True,
+        stdin=subprocess.PIPE,
+        universal_newlines=True,
+    )
+    hw_output = loads(hw_obj.stdout)
+    return hw_output
 
 
 def get_platform_id(platforms: list) -> str:
@@ -78,6 +91,7 @@ def get_os_info() -> dict:
 
 def get_gpu_info() -> list:
     gpu_elements = list()
+    gpu_class = "display"
     if platform.system() == "Windows":
         c = wmi.WMI()
         gpus = c.Win32_VideoController()
@@ -90,7 +104,7 @@ def get_gpu_info() -> list:
             vendor = gpu.AdapterCompatibility.strip().lower()
             gpu_element = {
                 "id": f"GPU{i+1}",
-                "class": "display",
+                "class": gpu_class,
                 "description": gpu.creationClassName.strip(),
                 "product": gpu.Name,
                 "vendor": vendor,
@@ -101,11 +115,15 @@ def get_gpu_info() -> list:
             gpu_elements.append(gpu_element)
 
     elif platform.system() == "Linux":
-        click.echo(" Error")
-        click.echo()
-        click.echo("ERROR: Linux Hardware information not yet supported", err=True)
-        click.pause("Press any key to exit")
-        exit()
+        gpus_info = run_lshw("display")
+        for gpu in gpus_info:
+            if "intel" in gpu["vendor"].lower():
+                gpu["vendor"] = "Intel"
+            elif "amd" in gpu["vendor"].lower():
+                gpu["vendor"] = "Amd"
+            elif "nvidia" in gpu["vendor"].lower():
+                gpu["vendor"] = "Nvidia"
+            gpu_elements.append(gpu)
     else:
         click.echo("Error")
         click.echo()
@@ -158,6 +176,19 @@ def get_ram_info() -> list:
                 "FormFactor": form_factor,
             }
             ram_modules.append(ram_module)
+    elif platform.system() == "Linux":
+        memory_info = run_lshw("memory")
+        for memory in memory_info:
+            if "id" in memory and "size" in memory and "units" in memory:
+                if memory["units"] == "bytes":
+                    memory["units"] == "b"
+                elif memory["units"] == "kilobytes":
+                    memory["units"] == "kb"
+                elif memory["units"] == "megabytes":
+                    memory["units"] == "mb"
+                if memory["units"] == "gigabytes":
+                    memory["units"] == "gb"
+                ram_modules.append(memory)
     return ram_modules
 
 
