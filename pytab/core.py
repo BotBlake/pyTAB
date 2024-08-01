@@ -365,7 +365,7 @@ def cli(
         click.echo()
         click.echo("    | 0: No GPU tests")
         for i, gpu in enumerate(gpus, 1):
-            click.echo(f"    | {i}: {gpu["product"]}, {gpu["vendor"]}")
+            click.echo(f"    | {i}: {gpu['product']}, {gpu['vendor']}")
         click.echo()
         gpu_input = click.prompt("    GPU input", type=int)
         click.echo("   _")
