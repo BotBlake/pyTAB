@@ -18,11 +18,9 @@
 #
 ##########################################################################################
 import os
-import tarfile
-import zipfile
 from hashlib import sha256
 from json import dump, dumps
-from shutil import rmtree
+from shutil import rmtree, unpack_archive
 
 import click
 from requests import get as reqGet
@@ -121,13 +119,8 @@ def unpackArchive(archive_path, target_path):
     os.makedirs(target_path)
 
     click.echo("Unpacking Archive...", nl=False)
-
-    if archive_path.endswith(".zip"):
-        with zipfile.ZipFile(archive_path, "r") as zip_ref:
-            zip_ref.extractall(target_path)
-    elif archive_path.endswith(".tar.gz"):
-        with tarfile.open(archive_path, "r:gz") as tar_ref:
-            tar_ref.extractall(target_path)
+    if archive_path.endswith((".zip", ".tar.gz", ".tar.xz")):
+        unpack_archive(archive_path, target_path)
     click.echo(" success!")
 
 
@@ -425,10 +418,12 @@ def cli(
         click.echo(f"An Error occured: {ffmpeg_download[1]}", err=True)
         click.pause("Press any key to exit")
         exit()
-
-    ffmpeg_files = f"{ffmpeg_path}/ffmpeg_files"
-    unpackArchive(ffmpeg_download[1], ffmpeg_files)
-    ffmpeg_binary = f"{ffmpeg_files}/ffmpeg"
+    elif ffmpeg_download[1].endswith((".zip", ".tar.gz", ".tar.xz")):
+        ffmpeg_files = f"{ffmpeg_path}/ffmpeg_files"
+        unpackArchive(ffmpeg_download[1], ffmpeg_files)
+        ffmpeg_binary = f"{ffmpeg_files}/ffmpeg"
+    else:
+        ffmpeg_binary = ffmpeg_download[1]
 
     click.echo(click.style("Done", fg="green"))
     click.echo()
