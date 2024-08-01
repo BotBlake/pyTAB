@@ -29,21 +29,6 @@ from requests import get as reqGet
 
 from pytab import api, hwi, worker
 
-placebo_cmd = [
-    "{ffmpeg}",
-    "-hide_banner",
-    "-c:v",
-    "h264",
-    "-i",
-    "{path}/jellyfish-40-mbps-hd-h264.mkv",
-    "-c:v",
-    "h264_nvenc",
-    "-benchmark",
-    "-f",
-    "null",
-    "-",
-]
-
 
 def match_hash(hash_dict: dict, output: bool) -> tuple:
     supported_hashes = [
