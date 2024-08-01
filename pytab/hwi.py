@@ -115,7 +115,7 @@ def get_gpu_info() -> list:
             gpu_elements.append(gpu_element)
 
     elif platform.system() == "Linux":
-        gpus_info = run_lshw("display")
+        gpus_info = run_lshw(gpu_class)
         for gpu in gpus_info:
             if "intel" in gpu["vendor"].lower():
                 gpu["vendor"] = "Intel"
@@ -179,7 +179,7 @@ def get_ram_info() -> list:
     elif platform.system() == "Linux":
         memory_info = run_lshw("memory")
         for memory in memory_info:
-            if "id" in memory and "size" in memory and "units" in memory:
+            if memory["id"] == "memory" and "size" in memory and "units" in memory:
                 if memory["units"] == "bytes":
                     memory["units"] == "b"
                 elif memory["units"] == "kilobytes":
