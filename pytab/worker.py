@@ -25,7 +25,7 @@ import subprocess
 import click
 
 
-def run_ffmpeg(pid: int, ffmpeg_cmd: str) -> tuple:  # Process ID,
+def run_ffmpeg(pid: int, ffmpeg_cmd: list) -> tuple:  # Process ID,
     # click.echo(f"{pid} |> Running FFMPEG Process: {pid}")
     timeout = 120  # Stop any process that runs for more then 120sec
     failure_reason = None
@@ -58,12 +58,13 @@ def run_ffmpeg(pid: int, ffmpeg_cmd: str) -> tuple:  # Process ID,
 
 
 def workMan(worker_count: int, ffmpeg_cmd: str) -> tuple:
+    ffmpeg_cmd_list = ffmpeg_cmd.split()
     raw_worker_data = {}
     failure_reason = None
     # click.echo(f"> Run with {worker_count} Processes")
     with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
         futures = {
-            executor.submit(run_ffmpeg, nr, ffmpeg_cmd): nr
+            executor.submit(run_ffmpeg, nr, ffmpeg_cmd_list): nr
             for nr in range(worker_count)
         }
         for future in concurrent.futures.as_completed(futures):
