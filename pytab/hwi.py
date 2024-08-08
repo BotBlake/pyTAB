@@ -40,6 +40,16 @@ def run_lshw(hardware):
     return hw_output
 
 
+def check_ven(vendor):
+    if "intel" in vendor.lower():
+        vendor = "Intel"
+    elif "amd" in vendor.lower():
+        vendor = "Amd"
+    elif "nvidia" in vendor.lower():
+        vendor = "Nvidia"
+    return vendor
+
+
 def get_platform_id(platforms: list) -> str:
     for element in platforms:
         if platform.system().lower() == element["type"].lower():
@@ -117,12 +127,13 @@ def get_gpu_info() -> list:
     elif platform.system() == "Linux":
         gpus_info = run_lshw(gpu_class)
         for gpu in gpus_info:
-            if "intel" in gpu["vendor"].lower():
-                gpu["vendor"] = "Intel"
-            elif "amd" in gpu["vendor"].lower():
-                gpu["vendor"] = "Amd"
-            elif "nvidia" in gpu["vendor"].lower():
-                gpu["vendor"] = "Nvidia"
+            if "vendor" not in gpu:
+                if "product" in gpu:
+                    gpu["vendor"] = check_ven(gpu["product"])
+                else:
+                    gpu["vendor"] = "Not provided by system"
+            else:
+                gpu["vendor"] = check_ven(gpu["vendor"])
             gpu_elements.append(gpu)
     else:
         click.echo("Error")

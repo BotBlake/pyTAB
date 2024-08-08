@@ -388,7 +388,7 @@ def cli(
 
     # Appends the selected GPU to supported types
     if gpu_input != 0:
-        supported_types.append(gpus[gpu_idx]["vendor"])
+        supported_types.append(gpus[gpu_idx]["vendor"].lower())
 
     # Error if all hardware disabled
     if gpu_input == 0 and disable_cpu:
