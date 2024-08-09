@@ -29,24 +29,24 @@ if platform.system() == "Windows":
 
 
 def run_lshw(hardware):
-    hw_obj = subprocess.run(
+    hw_subproc = subprocess.run(
         ["lshw", "-json", "-class", hardware],
         text=True,
         capture_output=True,
         stdin=subprocess.PIPE,
         universal_newlines=True,
     )
-    hw_output = loads(hw_obj.stdout)
+    hw_output = loads(hw_subproc.stdout)
     return hw_output
 
 
 def check_ven(vendor):
     if "intel" in vendor.lower():
-        vendor = "Intel"
-    elif "amd" in vendor.lower():
-        vendor = "Amd"
+        vendor = "intel"
+    elif "amd" in vendor.lower() or "advanced micro devices" in vendor.lower():
+        vendor = "amd"
     elif "nvidia" in vendor.lower():
-        vendor = "Nvidia"
+        vendor = "nvidia"
     return vendor
 
 
@@ -131,7 +131,7 @@ def get_gpu_info() -> list:
                 if "product" in gpu:
                     gpu["vendor"] = check_ven(gpu["product"])
                 else:
-                    gpu["vendor"] = "Not provided by system"
+                    gpu["vendor"] = "Unknown"
             else:
                 gpu["vendor"] = check_ven(gpu["vendor"])
             gpu_elements.append(gpu)
@@ -197,7 +197,7 @@ def get_ram_info() -> list:
                     memory["units"] == "kb"
                 elif memory["units"] == "megabytes":
                     memory["units"] == "mb"
-                if memory["units"] == "gigabytes":
+                elif memory["units"] == "gigabytes":
                     memory["units"] == "gb"
                 ram_modules.append(memory)
     return ram_modules
