@@ -101,7 +101,6 @@ def get_os_info() -> dict:
 
 def get_gpu_info() -> list:
     gpu_elements = list()
-    gpu_class = "display"
     if platform.system() == "Windows":
         c = wmi.WMI()
         gpus = c.Win32_VideoController()
@@ -114,7 +113,7 @@ def get_gpu_info() -> list:
             vendor = gpu.AdapterCompatibility.strip().lower()
             gpu_element = {
                 "id": f"GPU{i+1}",
-                "class": gpu_class,
+                "class": "display",
                 "description": gpu.creationClassName.strip(),
                 "product": gpu.Name,
                 "vendor": vendor,
@@ -125,7 +124,7 @@ def get_gpu_info() -> list:
             gpu_elements.append(gpu_element)
 
     elif platform.system() == "Linux":
-        gpus_info = run_lshw(gpu_class)
+        gpus_info = run_lshw("display")  # Display fetches info from lshw
         for gpu in gpus_info:
             if "vendor" not in gpu:
                 if "product" in gpu:
