@@ -18,13 +18,36 @@
 #
 ##########################################################################################
 import platform
-from json import dumps
+import subprocess
+from json import dumps, loads
 
 import click
 import cpuinfo
 
 if platform.system() == "Windows":
     import wmi
+
+
+def run_lshw(hardware):
+    hw_subproc = subprocess.run(
+        ["lshw", "-json", "-class", hardware],
+        text=True,
+        capture_output=True,
+        stdin=subprocess.PIPE,
+        universal_newlines=True,
+    )
+    hw_output = loads(hw_subproc.stdout)
+    return hw_output
+
+
+def check_ven(vendor):
+    if "intel" in vendor.lower():
+        vendor = "intel"
+    elif "amd" in vendor.lower() or "advanced micro devices" in vendor.lower():
+        vendor = "amd"
+    elif "nvidia" in vendor.lower():
+        vendor = "nvidia"
+    return vendor
 
 
 def get_platform_id(platforms: list) -> str:
@@ -101,11 +124,16 @@ def get_gpu_info() -> list:
             gpu_elements.append(gpu_element)
 
     elif platform.system() == "Linux":
-        click.echo(" Error")
-        click.echo()
-        click.echo("ERROR: Linux Hardware information not yet supported", err=True)
-        click.pause("Press any key to exit")
-        exit()
+        gpus_info = run_lshw("display")  # Display fetches info from lshw
+        for gpu in gpus_info:
+            if "vendor" not in gpu:
+                if "product" in gpu:
+                    gpu["vendor"] = check_ven(gpu["product"])
+                else:
+                    gpu["vendor"] = "Unknown"
+            else:
+                gpu["vendor"] = check_ven(gpu["vendor"])
+            gpu_elements.append(gpu)
     else:
         click.echo("Error")
         click.echo()
@@ -158,6 +186,19 @@ def get_ram_info() -> list:
                 "FormFactor": form_factor,
             }
             ram_modules.append(ram_module)
+    elif platform.system() == "Linux":
+        memory_info = run_lshw("memory")
+        for memory in memory_info:
+            if memory["id"] == "memory" and "size" in memory and "units" in memory:
+                if memory["units"] == "bytes":
+                    memory["units"] == "b"
+                elif memory["units"] == "kilobytes":
+                    memory["units"] == "kb"
+                elif memory["units"] == "megabytes":
+                    memory["units"] == "mb"
+                elif memory["units"] == "gigabytes":
+                    memory["units"] == "gb"
+                ram_modules.append(memory)
     return ram_modules
 
 
