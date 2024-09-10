@@ -2,6 +2,10 @@
 
 Python Transcoding Acceleration Benchmark
 
+Note. This is an Alpha Version of the Client.
+It has not been properly tested, nor implemented for all Platforms yet!
+Use at your own risk.
+
 ## Testing guide for [pyTAB](https://github.com/BotBlake/pytab)
 
 _pyTAB is in heavy development a.t.m. so expect it to be laggy and crash._
