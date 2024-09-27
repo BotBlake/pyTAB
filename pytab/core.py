@@ -124,87 +124,131 @@ def unpackArchive(archive_path, target_path):
     click.echo(" success!")
 
 
-def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
+def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar, is_nvidia_gpu: bool, gpu_idx: int) -> tuple:
     runs = []
     total_workers = 1
     run = True
-    last_speed = -0.5  # to Assure first worker always has the required difference
+    last_speed = -0.5  # To ensure that the first worker always has the required difference
     formatted_last_speed = "00.00"
     failure_reason = []
     if debug_flag:
         click.echo(f"> > > > Workers: {total_workers}, Last Speed: {last_speed}")
     while run:
-        if not debug_flag:
-            prog_bar.label = f"Testing | Workers: {total_workers:02d} | Last Speed: {formatted_last_speed}"
-            prog_bar.render_progress()
-        output = worker.workMan(total_workers, ffmpeg_cmd)
-        # First check if we continue Running:
-        # Stop when first run failed
-        if output[0] and total_workers == 1:
-            run = False
-            failure_reason.append(output[1])
-        # When run after scaleback succeded:
-        elif (last_speed < 1 and not output[0]) and last_speed != -0.5:
-            limited = False
-            if last_speed == -1:
-                limited = True
-            last_speed = output[1]["speed"]
-            formatted_last_speed = f"{last_speed:05.2f}"
-            if debug_flag:
-                click.echo(
-                    f"> > > > Scaleback success! Limit: {limited}, Total Workers: {total_workers}, Speed: {last_speed}"
-                )
-            run = False
+        if is_nvidia_gpu:
+            # For NVIDIA GPUs, use known session limits to prevent exceeding NVENC limits. Does this work properly? Idk. Don't have a machine to test it on without these limits in place.
+            if total_workers == 1:
+                gpu_worker_counts = [1, 2, 3, 4, 8]  # Nvidia driver limits can be 1, 2, 3, 4, or 8
+            else:
+                gpu_worker_counts = [total_workers]
 
-            if limited:
-                failure_reason.append("limited")
+            for gpu_worker_count in gpu_worker_counts:
+                if not debug_flag:
+                    prog_bar.label = f"Testing | Workers: {gpu_worker_count:02d} | Last Speed: {formatted_last_speed}"
+                    prog_bar.render_progress()
+                # Use gpu_worker_count instead of total_workers to correctly test each worker count
+                output = worker.workMan(gpu_worker_count, ffmpeg_cmd, gpu_idx)
+
+                if not output[0]:  # If no failure occurred
+                    runs.append(output[1])
+                    last_speed = output[1]["speed"]
+                    formatted_last_speed = f"{last_speed:05.2f}"
+                    if debug_flag:
+                        click.echo(f"> > > > Workers: {gpu_worker_count}, Last Speed: {last_speed}")
+                    if last_speed < 1:
+                        failure_reason.append("performance")
+                        run = False
+                        break
+                else:
+                    failure_reason.extend(output[1])
+                    if "nvenc_limit_reached" in output[1]:
+                        failure_reason.append("limited")
+                        if debug_flag:
+                            click.echo("Warning: NVIDIA GPU encoding limit reached. This is a known limitation based on the driver version.")
+                        run = False
+                        break
+                    else:
+                        if debug_flag:
+                            click.echo(f"Error during benchmark: {output[1]}")
+                        run = False
+                        break
+
+            if runs:
+                total_workers = max(run["workers"] for run in runs)
             else:
-                failure_reason.append("performance")
-        # Scaleback when fail on 1<workers (NvEnc Limit) or on Speed<1 with 1<last added workers or on last_Speed = Scaleback
-        elif (
-            (total_workers > 1 and output[0])
-            or (output[1]["speed"] < 1 and last_speed >= 2)
-            or (last_speed == -1)
-        ):
-            if output[0]:  # Assign variables depending on Scaleback reason
-                last_speed = -1
-                formatted_last_speed = "sclbk"
-            else:
+                total_workers = 1  # Default to 1 if no runs succeeded
+            run = False  # Exit the while loop after testing known NVENC limits
+        else:
+            # Non-NVIDIA GPUs (HAVE NOT TESTED) or CPU
+            if not debug_flag:
+                prog_bar.label = f"Testing | Workers: {total_workers:02d} | Last Speed: {formatted_last_speed}"
+                prog_bar.render_progress()
+            output = worker.workMan(total_workers, ffmpeg_cmd, gpu_idx)
+            # First check if we continue running:
+            # Stop when first run failed
+            if output[0] and total_workers == 1:
+                run = False
+                failure_reason.append(output[1])
+            # When run after scaleback succeeded:
+            elif (last_speed < 1 and not output[0]) and last_speed != -0.5:
+                limited = False
+                if last_speed == -1:
+                    limited = True
                 last_speed = output[1]["speed"]
                 formatted_last_speed = f"{last_speed:05.2f}"
-            total_workers -= 1
-            if debug_flag:
-                click.echo(
-                    f"> > > > Scaling back to: {total_workers}, Last Speed: {last_speed}"
-                )
-        elif output[0] and total_workers == 0:  # Fail when infinite scaleback
-            run = False
-            failure_reason.append(output[1])
-            failure_reason.append("infinity_scaleback")
-        elif output[1]["speed"] < 1:
-            run = False
-            failure_reason.append("performance")
-        # elif output[1]["speed"]-last_speed < 0.5:
-        #    run = False
-        #    failure_reason.append("failed_inconclusive")
-        else:  # When no failure happened
-            runs.append(output[1])
-            last_speed = output[1]["speed"]
-            total_workers += int(last_speed)
-            formatted_last_speed = f"{last_speed:05.2f}"
-            if debug_flag:
-                click.echo(
-                    f"> > > > Workers: {total_workers}, Last Speed: {last_speed}"
-                )
+                if debug_flag:
+                    click.echo(
+                        f"> > > > Scaleback success! Limit: {limited}, Total Workers: {total_workers}, Speed: {last_speed}"
+                    )
+                run = False
+
+                if limited:
+                    failure_reason.append("limited")
+                else:
+                    failure_reason.append("performance")
+            # Scaleback when fail on workers >1 (e.g., NVENC limit) or on speed <1 with last added workers or on last_speed = scaleback
+            elif (
+                (total_workers > 1 and output[0])
+                or (output[1]["speed"] < 1 and last_speed >= 2)
+                or (last_speed == -1)
+            ):
+                if output[0]:  # Assign variables depending on scaleback reason
+                    last_speed = -1
+                    formatted_last_speed = "sclbk"
+                else:
+                    last_speed = output[1]["speed"]
+                    formatted_last_speed = f"{last_speed:05.2f}"
+                total_workers -= 1
+                if debug_flag:
+                    click.echo(
+                        f"> > > > Scaling back to: {total_workers}, Last Speed: {last_speed}"
+                    )
+            elif output[0] and total_workers == 0:  # Fail when infinite scaleback
+                run = False
+                failure_reason.append(output[1])
+                failure_reason.append("infinity_scaleback")
+            elif output[1]["speed"] < 1:
+                run = False
+                failure_reason.append("performance")
+            # elif output[1]["speed"] - last_speed < 0.5:
+            #     run = False
+            #     failure_reason.append("failed_inconclusive")
+            else:  # When no failure happened
+                runs.append(output[1])
+                last_speed = output[1]["speed"]
+                total_workers += int(last_speed)
+                formatted_last_speed = f"{last_speed:05.2f}"
+                if debug_flag:
+                    click.echo(f"> > > > Workers: {total_workers}, Last Speed: {last_speed}")
+
     if debug_flag:
         click.echo(f"> > > > Failed: {failure_reason}")
     if len(runs) > 0:
-        max_streams = runs[(len(runs)) - 1]["workers"]
+        max_streams = max(run["workers"] for run in runs)
         result = {
             "max_streams": max_streams,
             "failure_reasons": failure_reason,
-            "single_worker_speed": runs[(len(runs)) - 1]["speed"],
-            "single_worker_rss_kb": runs[(len(runs)) - 1]["rss_kb"],
+            "single_worker_speed": runs[0]["speed"],
+            "single_worker_rss_kb": runs[0]["rss_kb"],
         }
         prog_bar.label = (
             f"Done    | Workers: {max_streams} | Last Speed: {formatted_last_speed}"
@@ -213,7 +257,6 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
     else:
         prog_bar.label = "Skipped | Workers: 00 | Last Speed: 00.00"
         return False, runs, {}
-
 
 def output_json(data, file_path):
     # Create the directory if it doesn't exist
@@ -397,6 +440,10 @@ def cli(
         click.pause("Press any key to exit")
         exit()
 
+    # Adjust gpu_idx for CUDA devices
+    if gpus[gpu_idx]["vendor"].lower() == "nvidia":
+        gpu_idx = 0  # The CUDA device index is 0
+
     # Stop Hardware Selection logic
 
     valid, server_data = api.getTestData(platform_id, platforms, server_url)
@@ -494,7 +541,8 @@ def cli(
                         )
                         test_cmd = f"{ffmpeg_binary} {arguments}"
 
-                        valid, runs, result = benchmark(test_cmd, debug_flag, prog_bar)
+                        is_nvidia_gpu = command["type"] == "nvidia"
+                        valid, runs, result = benchmark(test_cmd, debug_flag, prog_bar, is_nvidia_gpu, gpu_idx)
                         if not debug_flag:
                             prog_bar.update(1)
 
@@ -511,6 +559,17 @@ def cli(
 
                         if len(runs) >= 1:
                             benchmark_data.append(test_data)
+
+                        if debug_flag:
+                            click.echo(f"FFmpeg command: {test_cmd}")
+                            click.echo(f"Test result: {'Failed' if not valid else 'Success'}")
+                            if not valid:
+                                click.echo(f"Failure reasons: {result}")
+                                click.echo(f"FFmpeg stderr: {worker.run_ffmpeg(0, test_cmd.split(), gpu_idx)[0]}")
+                            else:
+                                click.echo(f"Max streams: {result['max_streams']}")
+                                click.echo(f"Single worker speed: {result['single_worker_speed']}")
+
     click.echo("")  # Displaying Prompt, before attempting to output / build final dict
     click.echo("Benchmark Done. Writing file to Output.")
     result_data = {
