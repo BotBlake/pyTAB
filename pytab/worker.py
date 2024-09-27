@@ -75,7 +75,6 @@ def run_ffmpeg(pid: int, ffmpeg_cmd: list) -> tuple:  # Process ID,
                     re.search(r"^Error (.*)", ffmpeg_stderr).group(1).strip()
                 )
                 break
-        print(failure_reason)
     return ffmpeg_stderr, failure_reason
 
 
