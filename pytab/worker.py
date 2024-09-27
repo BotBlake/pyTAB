@@ -22,8 +22,6 @@ import concurrent.futures
 import re
 import subprocess
 
-import click
-
 
 def run_ffmpeg(pid: int, ffmpeg_cmd: list) -> tuple:  # Process ID,
     # click.echo(f"{pid} |> Running FFMPEG Process: {pid}")
@@ -37,23 +35,47 @@ def run_ffmpeg(pid: int, ffmpeg_cmd: list) -> tuple:  # Process ID,
             universal_newlines=True,
             timeout=timeout,
         )
-
         retcode = process_output.returncode
         ffmpeg_stderr = process_output.stderr
 
-        if retcode > 0:
-            # click.echo(f"ERROR: {ffmpeg_stderr}")    <- Silencing Output
-            failure_reason = "generic_ffmpeg_failure"  # <-- HELP WANTED!
-
     except subprocess.TimeoutExpired:
-        ffmpeg_stderr = 1
+        ffmpeg_stderr = ""
+        retcode = 0
         failure_reason = "failed_timeout"
 
-    except Exception as e:
-        click.echo(e)
-        exit(1)
+    except Exception:
+        ffmpeg_stderr = ""
+        retcode = 0
+        failure_reason = "hard_ffmpeg_failure"
 
-    # click.echo(f"{pid} >| Ended FFMPEG Run: {pid}")
+    if 0 < retcode < 255:
+        failure_reason = "generic_ffmpeg_failure"
+        for line in ffmpeg_stderr:
+            if re.search(r" failed: (.*)\([0-9]+\)", ffmpeg_stderr):
+                failure_reason = (
+                    re.search(r" failed: (.*)\([0-9]+\)", ffmpeg_stderr)
+                    .group(1)
+                    .strip()
+                )
+                break
+            elif re.search(r" failed -> (.*): (.*)", ffmpeg_stderr):
+                failure_reason = (
+                    re.search(r" failed -> (.*): (.*)", ffmpeg_stderr).group(2).strip()
+                )
+                break
+            elif re.search(r" failed -> (.*): (.*)", ffmpeg_stderr):
+                failure_reason = (
+                    re.search(r" failed!: (.*) \([0-9]+\))", ffmpeg_stderr)
+                    .group(1)
+                    .strip()
+                )
+                break
+            elif re.search(r"^Error (.*)", ffmpeg_stderr):
+                failure_reason = (
+                    re.search(r"^Error (.*)", ffmpeg_stderr).group(1).strip()
+                )
+                break
+        print(failure_reason)
     return ffmpeg_stderr, failure_reason
 
 
