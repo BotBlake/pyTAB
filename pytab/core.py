@@ -315,6 +315,9 @@ def cli(
     debug = debug_flag
 
     click.echo()
+    click.echo("Welcome to PyTAB Cheeseburger Edition 🍔")
+    click.echo()
+
     if debug_flag:
         click.echo(
             click.style("Dev Mode", bg="magenta", fg="white")
