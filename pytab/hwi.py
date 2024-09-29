@@ -19,14 +19,13 @@
 ##########################################################################################
 import platform
 import subprocess
-from json import dumps, loads
+import json
 
 import click
 import cpuinfo
 
 if platform.system() == "Windows":
     import wmi
-
 
 def run_lshw(hardware):
     hw_subproc = subprocess.run(
@@ -36,9 +35,20 @@ def run_lshw(hardware):
         stdin=subprocess.PIPE,
         universal_newlines=True,
     )
-    hw_output = loads(hw_subproc.stdout)
+    hw_output = json.loads(hw_subproc.stdout)
     return hw_output
 
+def run_macos_sp(type: str) -> dict:
+    # available data types can be found here "https://real-world-systems.com/docs/system_profiler.1.html"
+    # or by simply running `systep_profiler -listDataTypes`
+    hw_subproc = subprocess.run(
+        ["system_profiler", "-json", "-detailLevel", "mini", type],
+        text=True,
+        capture_output=True,
+        stdin=subprocess.PIPE,
+        universal_newlines=True
+    )
+    return json.loads(hw_subproc.stdout)
 
 def check_ven(vendor):
     if "intel" in vendor.lower():
@@ -96,6 +106,19 @@ def get_os_info() -> dict:
         os_element["support_url"] = "https://support.microsoft.com"
         os_element["bug_report_url"] = "https://support.microsoft.com/contactus/"
 
+    # macOS
+    elif os_element["name"] == "Darwin":
+        sp = run_macos_sp("SPSoftwareDataType")
+        raw: str = sp["SPSoftwareDataType"][0]["os_version"].split()
+        os_element["name"] = raw[0]
+        os_element["id"] = "macos"
+        os_element["version"] = raw[1]
+        os_element["version_id"] = raw[1]
+        os_element["pretty_name"] = raw[0] + " " + raw[1]
+        os_element["home_url"] = "https://www.apple.com"
+        os_element["support_url"] = "https://support.apple.com"
+        os_element["bug_report_url"] = "https://www.apple.com/feedback/macos/"
+
     return os_element
 
 
@@ -134,6 +157,27 @@ def get_gpu_info() -> list:
             else:
                 gpu["vendor"] = check_ven(gpu["vendor"])
             gpu_elements.append(gpu)
+    
+    # macOS
+    elif platform.system() == "Darwin":
+        sp = run_macos_sp("SPDisplaysDataType")
+        gpus = sp["SPDisplaysDataType"]
+        for i in range(len(gpus)):
+            gpu = gpus[i]
+            entry = {
+                "id": i,
+                "class": "display",
+                "description": gpu["sppci_device_type"],
+                "product": gpu["sppci_model"],
+                "vendor": gpu["spdisplays_vendor"][13:],
+                "physid": "",
+                "businfo": gpu["sppci_bus"],
+                "configuration": gpu["spdisplays_mtlgpufamilysupport"],
+            }
+
+            gpu_elements.append(entry)
+
+
     else:
         click.echo("Error")
         click.echo()
@@ -147,19 +191,35 @@ def get_gpu_info() -> list:
 
 def get_cpu_info() -> list:
     cpu_info = cpuinfo.get_cpu_info()
+    # print(cpu_info) # debug
     cpu_elements = list()
-    vendor = cpu_info["vendor_id_raw"]
-    if "intel" in vendor.lower():
-        vendor = "Intel"
-    elif "amd" in vendor.lower() or "advanced micro devices" in vendor.lower():
-        vendor = "Amd"
+
+    # This field might not exist on macOS
+    if "vendor_id_raw" in cpu_info:
+        vendor = cpu_info["vendor_id_raw"]
+        if "intel" in vendor.lower():
+            vendor = "Intel"
+        elif "amd" in vendor.lower() or "advanced micro devices" in vendor.lower():
+            vendor = "Amd"
+
+    elif "Apple" in cpu_info["brand_raw"]:
+        vendor = "Apple"
+
+    else:
+        vendor = "Generic CPU"
+    
+    # Some platforms don't provide hz_advertised, using 0 as placeholder
+    if "hz_advertised" in cpu_info:
+        cpu_hz = max(cpu_info["hz_advertised"])
+    else:
+        cpu_hz = 0
 
     cpu_element = {
         "product": cpu_info["brand_raw"],
         "vendor": vendor,
         "cores": cpu_info["count"],
         "architecture": cpu_info["arch_string_raw"],
-        "hz_advertised": cpu_info["hz_advertised"][0],
+        "hz_advertised": cpu_hz,
         # "capabilities": cpu_info["flags"],  <- Temporarily Ignoring CPU Features
     }
     cpu_elements.append(cpu_element)
@@ -199,6 +259,24 @@ def get_ram_info() -> list:
                 elif memory["units"] == "gigabytes":
                     memory["units"] == "gb"
                 ram_modules.append(memory)
+    
+    elif platform.system() == "Darwin":
+        sp = run_macos_sp("SPMemoryDataType")
+        # DISCLAIMER: The following code only handles what I see on my M1 Pro system.
+        # I don't know what the output for x86 looks like, someone needs to test
+        for i in range(len(sp["SPMemoryDataType"])):
+            raw = sp["SPMemoryDataType"][i]
+            cap_info = raw["SPMemoryDataType"].split()
+            entry = {
+                "id": i,
+                "class": "memory",
+                "units": cap_info[1].lower(),
+                "size": int(cap_info[0]),
+                "vendor": raw["dimm_manufacturer"],
+                "FormFactor": raw["dimm_type"],
+            }
+            ram_modules.append(entry)
+
     return ram_modules
 
 
@@ -214,4 +292,4 @@ def get_system_info() -> dict:
 
 if __name__ == "__main__":
     system_info = get_system_info()
-    print(dumps(system_info, indent=4))
+    print(json.dumps(system_info, indent=4))

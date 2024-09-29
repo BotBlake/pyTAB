@@ -10,3 +10,4 @@ output.json
 /dist/*
 
 .idea/*
+.DS_Store
