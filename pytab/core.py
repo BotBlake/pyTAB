@@ -265,7 +265,8 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=12
 @click.option(
     "--server",
     "server_url",
-    required=True,
+    default="https://hwa.jellyfin.org/",
+    show_default=True,
     help="Server URL for test data and result submition.",
 )
 @click.option(
@@ -322,7 +323,7 @@ def cli(
         click.echo(
             click.style("Dev Mode", bg="magenta", fg="white")
             + ": Special Features and Output enabled  "
-            + click.style("DO NOT UPLOAD!", fg="red")
+            + click.style("DO NOT UPLOAD RESULTS!", fg="red")
         )
         click.echo()
     click.echo(click.style("System Initialization", bold=True))
@@ -340,6 +341,12 @@ def cli(
             click.pause("Press any key to exit")
             exit()
     else:
+        if not (server_url == "https://hwa.jellyfin.org/"):
+            click.echo(
+                click.style("|", bg="magenta", fg="white")
+                + " Not using official Server!  "
+                + click.style("DO NOT UPLOAD RESULTS!", fg="red")
+            )
         platforms = api.getPlatform(
             server_url
         )  # obtain list of (supported) Platforms + ID's
