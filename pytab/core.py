@@ -19,7 +19,7 @@
 ##########################################################################################
 import os
 from hashlib import sha256
-from json import json.dump, json.dumps
+import json
 from shutil import rmtree, unpack_archive
 
 import click
