@@ -90,9 +90,9 @@ def run_ffmpeg(pid: int, ffmpeg_cmd: list, gpu_idx: int) -> tuple:
 def parse_ffmpeg_error(stderr):
     stderr_lower = stderr.lower()
     if "no free encoding sessions" in stderr_lower or "cannot open encoder" in stderr_lower or "resource temporarily unavailable" in stderr_lower:
-        return ["nvenc_limit_reached"]
+        return ["failed_nvenc_limit"]
     elif "initialization failed" in stderr_lower:
-        return ["nvenc_limit_reached"]
+        return ["failed_nvenc_limit"]
     elif "no such device" in stderr_lower:
         return ["device_not_found"]
     elif "invalid device ordinal" in stderr_lower:
