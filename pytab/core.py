@@ -19,7 +19,7 @@
 ##########################################################################################
 import os
 from hashlib import sha256
-from json import dump, dumps
+import json
 from shutil import rmtree, unpack_archive
 
 import click
@@ -222,12 +222,12 @@ def output_json(data, file_path):
     # Write the data to the JSON file
     if file_path:
         with open(file_path, "w") as json_file:
-            dump(data, json_file, indent=4)
+            json.dump(data, json_file, indent=4)
         click.echo(f"Data successfully saved to {file_path}")
     else:
         click.echo()
         click.echo("No output file specified. Writing to stdout.")
-        click.echo(dumps(data, indent=4))
+        click.echo(json.dumps(data, indent=4))
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=120)
