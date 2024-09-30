@@ -164,12 +164,13 @@ def get_gpu_info() -> list:
         gpus = sp["SPDisplaysDataType"]
         for i in range(len(gpus)):
             gpu = gpus[i]
+            vendor = gpu["spdisplays_vendor"][13:] if "sppci_vendor" in gpu["spdisplays_vendor"] else gpu["spdisplays_vendor"]
             entry = {
                 "id": i,
                 "class": "display",
                 "description": gpu["sppci_device_type"],
                 "product": gpu["sppci_model"],
-                "vendor": gpu["spdisplays_vendor"][13:],
+                "vendor": vendor,
                 "physid": "",
                 "businfo": gpu["sppci_bus"],
                 "configuration": gpu["spdisplays_mtlgpufamilysupport"],
