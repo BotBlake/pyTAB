@@ -25,7 +25,7 @@ import click
 import cpuinfo
 
 if platform.system() == "Windows":
-    import wmi
+    import wmi # type: ignore
 
 def run_lshw(hardware):
     hw_subproc = subprocess.run(
