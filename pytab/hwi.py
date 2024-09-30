@@ -260,10 +260,9 @@ def get_ram_info() -> list:
                     memory["units"] == "gb"
                 ram_modules.append(memory)
     
+    # macOS
     elif platform.system() == "Darwin":
         sp = run_macos_sp("SPMemoryDataType")
-        # DISCLAIMER: The following code only handles what I see on my M1 Pro system.
-        # I don't know what the output for x86 looks like, someone needs to test
         for i in range(len(sp["SPMemoryDataType"])):
             raw = sp["SPMemoryDataType"][i]
             cap_info = raw["SPMemoryDataType"].split()
