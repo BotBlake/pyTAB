@@ -191,7 +191,6 @@ def get_gpu_info() -> list:
 
 def get_cpu_info() -> list:
     cpu_info = cpuinfo.get_cpu_info()
-    # print(cpu_info) # debug
     cpu_elements = list()
 
     # This field might not exist on macOS
