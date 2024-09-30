@@ -116,7 +116,7 @@ def get_gpu_info() -> list:
                 "class": "display",
                 "description": gpu.creationClassName.strip(),
                 "product": gpu.Name,
-                "vendor": vendor,
+                "vendor": check_ven(vendor),
                 "physid": gpu.DeviceID.strip(),
                 "businfo": gpu.PNPDeviceID.strip(),
                 "configuration": configuration,
