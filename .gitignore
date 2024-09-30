@@ -10,4 +10,6 @@ output.json
 /dist/*
 
 .idea/*
+
+# macOS finder index files
 .DS_Store
