@@ -110,8 +110,10 @@ def get_os_info() -> dict:
     elif os_element["name"] == "Darwin":
         sp = run_macos_sp("SPSoftwareDataType")
         raw: str = sp["SPSoftwareDataType"][0]["os_version"].split()
+        
         os_element["name"] = raw[0]
         os_element["id"] = "macos"
+        os_element["version_codename"] = "darwin"
         os_element["version"] = raw[1]
         os_element["version_id"] = raw[1]
         os_element["pretty_name"] = raw[0] + " " + raw[1]
