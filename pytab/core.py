@@ -26,6 +26,7 @@ import click
 from requests import get as reqGet
 
 from pytab import api, hwi, worker
+import yaml
 
 
 def match_hash(hash_dict: dict, output: bool) -> tuple:
@@ -361,6 +362,13 @@ def cli(
     click.echo("| Obtaining System Information...", nl=False)
     system_info = hwi.get_system_info()
     click.echo(" success!")
+    click.echo("| Detected System Config:")
+    click.echo(yaml.dump(system_info, default_flow_style=False))
+    sysinfo_input: str = click.prompt("Is this correct? [Y/n]", type=str, default='y', show_default=False, show_choices=False)
+    if sysinfo_input is not None and sysinfo_input.lower() == 'n':
+        click.echo("ERROR: Incorrect system info, aborted by user.")
+        click.pause("Press any key to exit")
+        exit()
 
     # Logic for Hardware Selection
     supported_types = []
