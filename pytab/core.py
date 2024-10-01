@@ -507,7 +507,7 @@ def cli(
                         arguments = command["args"]
                         arguments = arguments.format(
                             video_file=current_file,
-                            gpu=format_gpu_arg(hwi.platform.system(), gpu[gpu_idx])
+                            gpu=format_gpu_arg(hwi.platform.system(), gpus[gpu_idx])
                         )
                         test_cmd = f"{ffmpeg_binary} {arguments}"
 
