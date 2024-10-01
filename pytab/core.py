@@ -26,7 +26,6 @@ import click
 from requests import get as reqGet
 
 from pytab import api, hwi, worker
-import yaml
 
 
 def match_hash(hash_dict: dict, output: bool) -> tuple:
@@ -363,7 +362,19 @@ def cli(
     system_info = hwi.get_system_info()
     click.echo(" success!")
     click.echo("| Detected System Config:")
-    click.echo(yaml.dump(system_info, default_flow_style=False))
+    click.echo(f"|   OS: {system_info['os']['pretty_name']}")
+    for cpu in system_info['cpu']:
+        click.echo(f"|   CPU: {cpu['product']}")
+        click.echo(f"|     Threads: {cpu['cores']}")
+        click.echo(f"|     Arch: {cpu['architecture']}")
+    
+    click.echo("|   RAM:")
+    for ram in system_info['memory']:
+        click.echo(f"|     {ram['id']}: {ram['vendor']} {ram['size']} {ram['units']}")
+
+    click.echo("|   GPU(s):")
+    for gpu in system_info['gpu']:
+        click.echo(f"|     {gpu['id']}: {gpu['product']}")
     click.pause("Press any key to continue")
 
     # Logic for Hardware Selection
