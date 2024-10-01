@@ -364,11 +364,7 @@ def cli(
     click.echo(" success!")
     click.echo("| Detected System Config:")
     click.echo(yaml.dump(system_info, default_flow_style=False))
-    sysinfo_input: str = click.prompt("Is this correct? [Y/n]", type=str, default='y', show_default=False, show_choices=False)
-    if sysinfo_input is not None and sysinfo_input.lower() == 'n':
-        click.echo("ERROR: Incorrect system info, aborted by user.")
-        click.pause("Press any key to exit")
-        exit()
+    click.pause("Press any key to continue")
 
     # Logic for Hardware Selection
     supported_types = []
