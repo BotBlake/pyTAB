@@ -242,6 +242,11 @@ def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar, is_nvidia_gpu: bool, 
 
     if debug_flag:
         click.echo(f"> > > > Failed: {failure_reason}")
+    
+    # Add 'no_failure' if no failure reasons were recorded since the server requires a failure reason to be present.
+    if not failure_reason:
+        failure_reason.append('no_failure')
+
     if len(runs) > 0:
         max_streams = max(run["workers"] for run in runs)
         result = {
@@ -550,9 +555,9 @@ def cli(
                         test_data["type"] = command["type"]
                         if command["type"] != "cpu":
                             test_data["selected_gpu"] = gpu_idx
-                            test_data["selected_cpu"] = None
+                            test_data["selected_cpu"] = -1
                         else:
-                            test_data["selected_gpu"] = None
+                            test_data["selected_gpu"] = -1
                             test_data["selected_cpu"] = 0
                         test_data["runs"] = runs
                         test_data["results"] = result
