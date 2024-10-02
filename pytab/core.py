@@ -381,7 +381,7 @@ def cli(
             size //= 1000
             units = 'mb'
 
-        click.echo(f"|     - {vendor} {size} {units}")
+        click.echo(f"|     - {vendor} {size} {units} {ram.get('FormFactor', 0)}")
 
     click.echo("|   GPU(s):")
     for i, gpu in enumerate(system_info['gpu'], 1):
