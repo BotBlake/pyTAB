@@ -384,8 +384,8 @@ def cli(
         click.echo(f"|     - {vendor} {size} {units}")
 
     click.echo("|   GPU(s):")
-    for gpu in system_info['gpu']:
-        click.echo(f"|     {gpu['id']}: {gpu['product']}")
+    for i, gpu in enumerate(system_info['gpu'], 1):
+        click.echo(f"|     {i}: {gpu['product']}")
     click.pause("Press any key to continue")
 
     # Logic for Hardware Selection
