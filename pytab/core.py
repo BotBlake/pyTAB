@@ -370,7 +370,18 @@ def cli(
     
     click.echo("|   RAM:")
     for ram in system_info['memory']:
-        click.echo(f"|     {ram['id']}: {ram['vendor']} {ram['size']} {ram['units']}")
+        vendor = ram['vendor'] if 'vendor' in ram else 'Generic'
+        size = ram['size']
+        units = ram['units']
+        if units.lower() in ('b', 'bytes'):
+            size //= 1000
+            units = 'kb'
+        
+        if units.lower() in 'kb', 'kilobytes':
+            size //= 1000
+            units = 'mb'
+
+        click.echo(f"|     - {vendor} {size} {units}")
 
     click.echo("|   GPU(s):")
     for gpu in system_info['gpu']:
