@@ -21,15 +21,40 @@
 import concurrent.futures
 import re
 import subprocess
+import json
 
 import click
 
-
-def run_ffmpeg(pid: int, ffmpeg_cmd: list) -> tuple:  # Process ID,
+def run_ffmpeg(pid: int, ffmpeg_cmd: list, gpu_idx: int) -> tuple:
     # click.echo(f"{pid} |> Running FFMPEG Process: {pid}")
     timeout = 120  # Stop any process that runs for more then 120sec
     failure_reason = None
     try:
+        # First, probe the input file to determine the correct codec
+        input_file = ffmpeg_cmd[ffmpeg_cmd.index('-i') + 1]
+        probe_cmd = ['ffmpeg/ffmpeg_files/ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_streams', '-select_streams', 'v:0', input_file]
+        probe_output = subprocess.run(probe_cmd, capture_output=True, text=True)
+        probe_data = json.loads(probe_output.stdout)
+        codec = probe_data['streams'][0]['codec_name']
+
+        # Modify the ffmpeg command to use the correct decoder and CUDA device
+        if '-c:v' in ffmpeg_cmd:
+            decoder_index = ffmpeg_cmd.index('-c:v') + 1
+            ffmpeg_cmd[decoder_index] = f"{codec}_cuvid"
+        else:
+            # Insert '-c:v' option with the correct decoder
+            ffmpeg_cmd.insert(ffmpeg_cmd.index('-i'), '-c:v')
+            ffmpeg_cmd.insert(ffmpeg_cmd.index('-i') + 1, f"{codec}_cuvid")
+
+        # Update CUDA device index
+        if '-init_hw_device' in ffmpeg_cmd:
+            cuda_init_index = ffmpeg_cmd.index('-init_hw_device')
+            ffmpeg_cmd[cuda_init_index + 1] = f'cuda=cu:{gpu_idx}'
+        else:
+            # Insert '-init_hw_device' option
+            ffmpeg_cmd.insert(1, '-init_hw_device')
+            ffmpeg_cmd.insert(2, f'cuda=cu:{gpu_idx}')
+
         process_output = subprocess.run(
             ffmpeg_cmd,
             stdin=subprocess.PIPE,
@@ -43,28 +68,46 @@ def run_ffmpeg(pid: int, ffmpeg_cmd: list) -> tuple:  # Process ID,
 
         if retcode > 0:
             # click.echo(f"ERROR: {ffmpeg_stderr}")    <- Silencing Output
-            failure_reason = "generic_ffmpeg_failure"  # <-- HELP WANTED!
+            failure_reason = parse_ffmpeg_error(ffmpeg_stderr)
+        else:
+            ffmpeg_stderr = process_output.stderr
 
     except subprocess.TimeoutExpired:
-        ffmpeg_stderr = 1
-        failure_reason = "failed_timeout"
+        ffmpeg_stderr = "Timeout occurred"
+        failure_reason = ["failed_timeout"]
+
+    except json.JSONDecodeError as e:
+        ffmpeg_stderr = f"Failed to parse ffprobe output: {str(e)}"
+        failure_reason = ["ffprobe_error", str(e)]
 
     except Exception as e:
-        click.echo(e)
-        exit(1)
+        ffmpeg_stderr = str(e)
+        failure_reason = ["unexpected_error", str(e)]
 
     # click.echo(f"{pid} >| Ended FFMPEG Run: {pid}")
     return ffmpeg_stderr, failure_reason
 
+def parse_ffmpeg_error(stderr):
+    stderr_lower = stderr.lower()
+    if "no free encoding sessions" in stderr_lower or "cannot open encoder" in stderr_lower or "resource temporarily unavailable" in stderr_lower:
+        return ["failed_nvenc_limit"]
+    elif "initialization failed" in stderr_lower:
+        return ["failed_nvenc_limit"]
+    elif "no such device" in stderr_lower:
+        return ["device_not_found"]
+    elif "invalid device ordinal" in stderr_lower:
+        return ["invalid_device"]
+    else:
+        return ["unknown_ffmpeg_error", stderr]
 
-def workMan(worker_count: int, ffmpeg_cmd: str) -> tuple:
+def workMan(worker_count: int, ffmpeg_cmd: str, gpu_idx: int) -> tuple:
     ffmpeg_cmd_list = ffmpeg_cmd.split()
     raw_worker_data = {}
-    failure_reason = None
+    failure_reasons = []
     # click.echo(f"> Run with {worker_count} Processes")
     with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
         futures = {
-            executor.submit(run_ffmpeg, nr, ffmpeg_cmd_list): nr
+            executor.submit(run_ffmpeg, nr, ffmpeg_cmd_list, gpu_idx): nr
             for nr in range(worker_count)
         }
         for future in concurrent.futures.as_completed(futures):
@@ -73,13 +116,12 @@ def workMan(worker_count: int, ffmpeg_cmd: str) -> tuple:
                 raw_worker_data[pid] = future.result()
                 # click.echo(f"> > > Finished Worker Process: {pid}")
                 if raw_worker_data[pid][1]:
-                    failure_reason = raw_worker_data[pid][1]
+                    failure_reasons.extend(raw_worker_data[pid][1])
             except Exception as e:
-                print(f"Worker {pid} generated an exception: {e}")
+                failure_reasons.append(f"Worker {pid} exception: {str(e)}")
 
-    if failure_reason:
-        raw_worker_data = None
-        # Deleting all the Raw Data, since run with failed Worker is not counted
+    if failure_reasons:
+        return True, failure_reasons
 
     run_data_raw = []
     if raw_worker_data:  # If no run Failed
@@ -133,7 +175,7 @@ def workMan(worker_count: int, ffmpeg_cmd: str) -> tuple:
             run_data_raw.append(worker_data)
         return False, evaluateRunData(run_data_raw)
     else:
-        return True, failure_reason
+        return True, failure_reasons
 
 
 def evaluateRunData(run_data_raw: list) -> dict:
