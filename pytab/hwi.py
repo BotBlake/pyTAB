@@ -158,8 +158,6 @@ def get_gpu_info() -> list:
                     gpu["vendor"] = "Unknown"
             else:
                 gpu["vendor"] = check_ven(gpu["vendor"])
-            if gpu['id'].startswith('display:'):
-                gpu['id'] = gpu['id'][8:]
             gpu_elements.append(gpu)
     
     # macOS
