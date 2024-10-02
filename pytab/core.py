@@ -377,7 +377,7 @@ def cli(
             size //= 1000
             units = 'kb'
         
-        if units.lower() in 'kb', 'kilobytes':
+        if units.lower() in ('kb', 'kilobytes'):
             size //= 1000
             units = 'mb'
 
