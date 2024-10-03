@@ -5,7 +5,7 @@ pyTAB (Python Transcoding Acceleration Benchmark) is a benchmarking tool designe
 The benchmark results can be uploaded to the central Jellyfin Hardware Survey Server, allowing users to compare their hardware's performance with other systems. This facilitates easy visualization of the results and serves as a valuable resource for Jellyfin users looking to optimize their transcoding capabilities.
 
 ## [pyTAB](https://github.com/BotBlake/pytab) QuickStart Guide
-> [!IMPORTANT]
+> [!WARNING]
 > This is an Alpha Version of the Client.
 It has not been properly tested, nor implemented for all Platforms yet!
 Use at your own risk.
@@ -16,12 +16,12 @@ Use at your own risk.
 > [!NOTE]
 > The Benchmark will take multiple hours to finish. Make sure to run it, when the system is not used.
 
-> [!CAUTION]
+> [!WARNING]
 > By default the client will use the official Jellyfin Hardware Survey Server on https://hwa.jellyfin.org/. The script will not upload any Test results without seperate user confirmation. It will only load the tests and test files based on your Operating System and Architecture.
 
 ### Software Requirements
 
-pyTAB is build as a python module via poetry. Therefore you need to have at least python 3.11.2 and poetry installed on your system.
+pyTAB is built as a python module via poetry. Therefore you need to have at least python 3.11.2 and poetry installed on your system.
 poetry is installed via pipx using: `pipx install poetry`
 If you do not have pipx installed, follow the [official install guide](https://pipx.pypa.io/stable/installation/)
 
