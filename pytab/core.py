@@ -366,7 +366,8 @@ def cli(
     for cpu in system_info['cpu']:
         click.echo(f"|   CPU: {cpu['product']}")
         click.echo(f"|     Threads: {cpu['cores']}")
-        click.echo(f"|     Arch: {cpu['architecture']}")
+        if 'architecture' in cpu:
+            click.echo(f"|     Arch: {cpu['architecture']}")
     
     click.echo("|   RAM:")
     for ram in system_info['memory']:
