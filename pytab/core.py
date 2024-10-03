@@ -382,6 +382,33 @@ def cli(
     click.echo("| Obtaining System Information...", nl=False)
     system_info = hwi.get_system_info()
     click.echo(" success!")
+    click.echo("| Detected System Config:")
+    click.echo(f"|   OS: {system_info['os']['pretty_name']}")
+    for cpu in system_info['cpu']:
+        click.echo(f"|   CPU: {cpu['product']}")
+        click.echo(f"|     Threads: {cpu['cores']}")
+        if 'architecture' in cpu:
+            click.echo(f"|     Arch: {cpu['architecture']}")
+    
+    click.echo("|   RAM:")
+    for ram in system_info['memory']:
+        vendor = ram['vendor'] if 'vendor' in ram else 'Generic'
+        size = ram['size']
+        units = ram['units']
+        if units.lower() in ('b', 'bytes'):
+            size //= 1000
+            units = 'kb'
+        
+        if units.lower() in ('kb', 'kilobytes'):
+            size //= 1000
+            units = 'mb'
+
+        click.echo(f"|     - {vendor} {size} {units} {ram.get('FormFactor', 0)}")
+
+    click.echo("|   GPU(s):")
+    for i, gpu in enumerate(system_info['gpu'], 1):
+        click.echo(f"|     {i}: {gpu['product']}")
+    # click.pause("Press any key to continue")
 
     # Logic for Hardware Selection
     supported_types = []
@@ -394,21 +421,20 @@ def cli(
     gpus = system_info["gpu"]
 
     if len(gpus) > 1 and gpu_input is None:
-        click.echo("\\")
-        click.echo(" \\")
-        click.echo("  \\_")
-        click.echo("    Multiple GPU's detected.")
-        click.echo("    Please select one to continue:")
-        click.echo()
-        click.echo("    | 0: No GPU tests")
-        for i, gpu in enumerate(gpus, 1):
-            click.echo(f"    | {i}: {gpu['product']}, {gpu['vendor']}")
-        click.echo()
-        gpu_input = click.prompt("    GPU input", type=int)
-        click.echo("   _")
-        click.echo("  /")
-        click.echo(" /")
-        click.echo("/")
+        # click.echo("\\")
+        # click.echo(" \\")
+        # click.echo("  \\_")
+        click.echo("Multiple GPU's detected. Please select one to continue.")
+        # click.echo()
+        # click.echo("| 0: No GPU tests")
+        # for i, gpu in enumerate(gpus, 1):
+        #     click.echo(f"    | {i}: {gpu['product']}, {gpu['vendor']}")
+        # click.echo()
+        gpu_input = click.prompt("Select GPU (0 to disable GPU tests)", type=int)
+        # click.echo("   _")
+        # click.echo("  /")
+        # click.echo(" /")
+        # click.echo("/")
     # checks to see if the flag or the selector were used
     # if not assigns input of the first GPU
     elif gpu_input is None:
