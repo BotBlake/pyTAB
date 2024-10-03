@@ -17,10 +17,11 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 ##########################################################################################
-import os
-from hashlib import sha256
 import json
-from shutil import rmtree, unpack_archive
+import os
+import textwrap
+from hashlib import sha256
+from shutil import get_terminal_size, rmtree, unpack_archive
 
 import click
 from requests import get as reqGet
@@ -122,6 +123,7 @@ def unpackArchive(archive_path, target_path):
     if archive_path.endswith((".zip", ".tar.gz", ".tar.xz")):
         unpack_archive(archive_path, target_path)
     click.echo(" success!")
+
 
 def format_gpu_arg(system_os, gpu):
     if system_os.lower() == "windows":
@@ -325,6 +327,25 @@ def cli(
     click.echo("Welcome to PyTAB Cheeseburger Edition 🍔")
     click.echo()
 
+    # Informative disclaimer text
+    terminal_size = get_terminal_size((80, 20))
+    terminal_width = terminal_size.columns
+
+    click.echo(click.style("Disclaimer", bold=True))
+    discplaimer_text = "Please close all background programs and plug the device into a power source if it is running on battery power before starting the benchmark."
+
+    indent = "| "
+    discplaimer_text = textwrap.fill(
+        text=discplaimer_text,
+        width=terminal_width - 10,
+        initial_indent=indent,
+        subsequent_indent=indent,
+    )
+    click.echo(discplaimer_text)
+    click.confirm("Confirm")
+
+    click.echo()
+
     if debug_flag:
         click.echo(
             click.style("Dev Mode", bg="magenta", fg="white")
@@ -507,7 +528,7 @@ def cli(
                         arguments = command["args"]
                         arguments = arguments.format(
                             video_file=current_file,
-                            gpu=format_gpu_arg(hwi.platform.system(), gpus[gpu_idx])
+                            gpu=format_gpu_arg(hwi.platform.system(), gpus[gpu_idx]),
                         )
                         test_cmd = f"{ffmpeg_binary} {arguments}"
 
