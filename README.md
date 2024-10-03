@@ -5,22 +5,25 @@ pyTAB (Python Transcoding Acceleration Benchmark) is a benchmarking tool designe
 The benchmark results can be uploaded to the central Jellyfin Hardware Survey Server, allowing users to compare their hardware's performance with other systems. This facilitates easy visualization of the results and serves as a valuable resource for Jellyfin users looking to optimize their transcoding capabilities.
 
 ## [pyTAB](https://github.com/BotBlake/pytab) QuickStart Guide
-Warnings:
+> [!IMPORTANT]
 > This is an Alpha Version of the Client.
 It has not been properly tested, nor implemented for all Platforms yet!
 Use at your own risk.
 
+> [!NOTE]
 > This hardware benchmark will use all system ressources available.
 
+> [!NOTE]
 > The Benchmark will take multiple hours to finish. Make sure to run it, when the system is not used.
+
+> [!CAUTION]
+> By default the client will use the official Jellyfin Hardware Survey Server on https://hwa.jellyfin.org/. The script will not upload any Test results without seperate user confirmation. It will only load the tests and test files based on your Operating System and Architecture.
 
 ### Software Requirements
 
 pyTAB is build as a python module via poetry. Therefore you need to have at least python 3.11.2 and poetry installed on your system.
 poetry is installed via pipx using: `pipx install poetry`
 If you do not have pipx installed, follow the [official install guide](https://pipx.pypa.io/stable/installation/)
-
-Its also required to have access to a running instance of Venson's [Jellyfin Hardware Visualizer](https://github.com/JPVenson/Jellyfin.HardwareVisualizer). More information about that is available in the GitHub repo.
 
 ### Installing pyTAB
 
@@ -31,12 +34,14 @@ Its also required to have access to a running instance of Venson's [Jellyfin Har
 5. Install Dependencies `poetry install`  
 _(To exit the Shell: `exit`)_
 
-Since the state of the software often Changes, you might have to do some "additional steps" to ensure its running correctly. They are explained down below in the [additional Steps](https://github.com/BotBlake/pytab?tab=readme-ov-file#additional-steps) section.
+> [!IMPORTANT]
+> Since the state of the software often Changes, you might have to do some "additional steps" to ensure its running correctly. They are explained down below in the [additional Steps](https://github.com/BotBlake/pytab?tab=readme-ov-file#additional-steps) section.
 
 ### Running pyTAB
 
 1. open the poetry shell `poetry shell`
 2. run the script `pytab`
+> [!IMPORTANT]
 > By default this will use the official Jellyfin Hardware Survey Server https://hwa.jellyfin.org/. If you want to run from a custom Server, use the `--server {url}` option
 
 _If you want / need specific info about all the CLI Arguments, run `pytab -h`_
@@ -70,5 +75,7 @@ These will change over time, so please ensure you check this section regularly f
 ### NvEnc Driver Limit
 NVIDIA Limits their consumer grade GPU's maximum NvEnc Streams through the driver. Currently this leads to a super long runtime on NvEnc limited devices.
 
-If you do use a NVIDIA consumer grade Graphics Card and have not done anything to circumvent the limit, its currently recommended to not Test on that device.
+> [!CAUTION]
+> If you do use a NVIDIA consumer grade Graphics Card and have not done anything to circumvent the limit, its currently recommended to not Test on that device.
+Runtime on these devices will be significantly increased!
 
