@@ -17,17 +17,42 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 ##########################################################################################
+import json
 import platform
 import subprocess
-import json
 
 import click
 import cpuinfo
 
 if platform.system() == "Windows":
-    import wmi # type: ignore
+    import wmi  # type: ignore
+
+
+def test_lshw():  # test if lshw is installed properly (True/ False)
+    try:
+        lshw_subproc = subprocess.run(
+            ["lshw", "--version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        if lshw_subproc.returncode == 0:
+            return True
+        else:
+            return False
+    except FileNotFoundError:
+        return False
+
 
 def run_lshw(hardware):
+    if not test_lshw:
+        click.echo("Error")
+        click.echo()
+        click.echo(
+            "ERROR: lshw not installed. You may install it and try again.", err=True
+        )
+        click.pause("Press any key to exit")
+        exit()
     hw_subproc = subprocess.run(
         ["lshw", "-json", "-class", hardware],
         text=True,
@@ -38,6 +63,7 @@ def run_lshw(hardware):
     hw_output = json.loads(hw_subproc.stdout)
     return hw_output
 
+
 def run_macos_sp(type: str) -> dict:
     # available data types can be found here "https://real-world-systems.com/docs/system_profiler.1.html"
     # or by simply running `systep_profiler -listDataTypes`
@@ -46,9 +72,10 @@ def run_macos_sp(type: str) -> dict:
         text=True,
         capture_output=True,
         stdin=subprocess.PIPE,
-        universal_newlines=True
+        universal_newlines=True,
     )
     return json.loads(hw_subproc.stdout)
+
 
 def check_ven(vendor):
     if "intel" in vendor.lower():
@@ -110,7 +137,7 @@ def get_os_info() -> dict:
     elif os_element["name"] == "Darwin":
         sp = run_macos_sp("SPSoftwareDataType")
         raw: str = sp["SPSoftwareDataType"][0]["os_version"].split()
-        
+
         os_element["name"] = raw[0]
         os_element["id"] = "macos"
         os_element["version_codename"] = "darwin"
@@ -159,14 +186,18 @@ def get_gpu_info() -> list:
             else:
                 gpu["vendor"] = check_ven(gpu["vendor"])
             gpu_elements.append(gpu)
-    
+
     # macOS
     elif platform.system() == "Darwin":
         sp = run_macos_sp("SPDisplaysDataType")
         gpus = sp["SPDisplaysDataType"]
         for i in range(len(gpus)):
             gpu = gpus[i]
-            vendor = gpu["spdisplays_vendor"][13:] if "sppci_vendor" in gpu["spdisplays_vendor"] else gpu["spdisplays_vendor"]
+            vendor = (
+                gpu["spdisplays_vendor"][13:]
+                if "sppci_vendor" in gpu["spdisplays_vendor"]
+                else gpu["spdisplays_vendor"]
+            )
             entry = {
                 "id": i,
                 "class": "display",
@@ -179,7 +210,6 @@ def get_gpu_info() -> list:
             }
 
             gpu_elements.append(entry)
-
 
     else:
         click.echo("Error")
@@ -209,7 +239,7 @@ def get_cpu_info() -> list:
 
     else:
         vendor = "Generic CPU"
-    
+
     # Some platforms don't provide hz_advertised, using 0 as placeholder
     if "hz_advertised" in cpu_info:
         cpu_hz = max(cpu_info["hz_advertised"])
@@ -261,7 +291,7 @@ def get_ram_info() -> list:
                 elif memory["units"] == "gigabytes":
                     memory["units"] == "gb"
                 ram_modules.append(memory)
-    
+
     # macOS
     elif platform.system() == "Darwin":
         sp = run_macos_sp("SPMemoryDataType")
