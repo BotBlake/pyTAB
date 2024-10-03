@@ -45,7 +45,6 @@ def getPlatform(server_url: str) -> list:
 
 
 def getTestData(platformID: str, platforms_data: list, server_url: str) -> tuple:
-    # If Return Code 429, message = retry_after - header
     valid = True
     click.echo("| Loading tests... ", nl=False)
 
@@ -88,6 +87,11 @@ def getTestData(platformID: str, platforms_data: list, server_url: str) -> tuple
         if response.status_code == 200:
             click.echo(" success!")
             test_data = response.json()
+        elif response.status_code == 429:
+            click.echo(" Error")
+            click.echo(f"ERROR: Server replied with {response.status_code}")
+            ratelimit_time = response.headers["retry-after"]
+            click.echo(f"Ratelimited: Retry in {ratelimit_time}s")
         else:
             click.echo(" Error")
             click.echo(f"ERROR: Server replied with {response.status_code}")
