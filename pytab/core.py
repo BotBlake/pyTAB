@@ -525,7 +525,7 @@ def cli(
     click.echo("Benchmark Done. Writing file to Output.")
     result_data = {
         "token": server_data["token"],
-        "hwinfo": {"ffmpeg": ffmpeg_data, **system_info},
+        "hwinfo": system_info,
         "tests": benchmark_data,
     }
     output_json(result_data, output_path)
