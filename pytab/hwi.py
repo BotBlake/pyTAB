@@ -45,7 +45,7 @@ def test_lshw():  # test if lshw is installed properly (True/ False)
 
 
 def run_lshw(hardware):
-    if not test_lshw:
+    if not test_lshw():
         click.echo("Error")
         click.echo()
         click.echo(
