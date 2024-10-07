@@ -125,9 +125,9 @@ def unpackArchive(archive_path, target_path):
     click.echo(" success!")
 
 
-def format_gpu_arg(system_os, gpu):
+def format_gpu_arg(system_os, gpu, gpu_idx):
     if system_os.lower() == "windows":
-        return gpu["id"] - 1
+        return gpu_idx
     if system_os.lower() == "linux":
         return gpu["businfo"].replace("@", "-")
 
@@ -554,7 +554,7 @@ def cli(
                         arguments = command["args"]
                         arguments = arguments.format(
                             video_file=current_file,
-                            gpu=format_gpu_arg(hwi.platform.system(), gpus[gpu_idx]),
+                            gpu=format_gpu_arg(hwi.platform.system(), gpus[gpu_idx], gpu_idx),
                         )
                         test_cmd = f"{ffmpeg_binary} {arguments}"
 
