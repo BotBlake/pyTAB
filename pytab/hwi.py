@@ -28,16 +28,17 @@ if platform.system() == "Windows":
     import wmi  # type: ignore
 
 
-def test_lshw():  # test if lshw is installed properly (True/ False)
+def test_lshw():  # test if lshw is installed properly (Executable Path/ False)
     try:
         lshw_subproc = subprocess.run(
-            ["lshw", "--version"],
+            ["which", "lshw"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
         )
         if lshw_subproc.returncode == 0:
-            return True
+            lshw_path = lshw_subproc.stdout.strip()
+            return lshw_path
         else:
             return False
     except FileNotFoundError:
@@ -45,7 +46,8 @@ def test_lshw():  # test if lshw is installed properly (True/ False)
 
 
 def run_lshw(hardware):
-    if not test_lshw():
+    lshw_path = test_lshw()
+    if not lshw_path:
         click.echo("Error")
         click.echo()
         click.echo(
@@ -54,7 +56,7 @@ def run_lshw(hardware):
         click.pause("Press any key to exit")
         exit()
     hw_subproc = subprocess.run(
-        ["lshw", "-json", "-class", hardware],
+        [lshw_path, "-json", "-class", hardware],
         text=True,
         capture_output=True,
         stdin=subprocess.PIPE,
