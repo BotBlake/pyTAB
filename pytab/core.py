@@ -126,10 +126,16 @@ def unpackArchive(archive_path, target_path):
 
 
 def format_gpu_arg(system_os, gpu, gpu_idx):
+    vendor = gpu["vendor"]
     if system_os.lower() == "windows":
         return gpu_idx
     if system_os.lower() == "linux":
-        return gpu["businfo"].replace("@", "-")
+        if vendor == "amd":  # vaapi
+            return gpu_idx
+        if vendor == "intel":  # qsv
+            return f"/dev/dri/renderD{128+gpu_idx}"
+        else:  # cuda, ...
+            return gpu["businfo"].replace("@", "-")
 
 
 def benchmark(ffmpeg_cmd: str, debug_flag: bool, prog_bar) -> tuple:
@@ -384,29 +390,29 @@ def cli(
     click.echo(" success!")
     click.echo("| Detected System Config:")
     click.echo(f"|   OS: {system_info['os']['pretty_name']}")
-    for cpu in system_info['cpu']:
+    for cpu in system_info["cpu"]:
         click.echo(f"|   CPU: {cpu['product']}")
         click.echo(f"|     Threads: {cpu['cores']}")
-        if 'architecture' in cpu:
+        if "architecture" in cpu:
             click.echo(f"|     Arch: {cpu['architecture']}")
-    
+
     click.echo("|   RAM:")
-    for ram in system_info['memory']:
-        vendor = ram['vendor'] if 'vendor' in ram else 'Generic'
-        size = ram['size']
-        units = ram['units']
-        if units.lower() in ('b', 'bytes'):
+    for ram in system_info["memory"]:
+        vendor = ram["vendor"] if "vendor" in ram else "Generic"
+        size = ram["size"]
+        units = ram["units"]
+        if units.lower() in ("b", "bytes"):
             size //= 1000
-            units = 'kb'
-        
-        if units.lower() in ('kb', 'kilobytes'):
+            units = "kb"
+
+        if units.lower() in ("kb", "kilobytes"):
             size //= 1000
-            units = 'mb'
+            units = "mb"
 
         click.echo(f"|     - {vendor} {size} {units} {ram.get('FormFactor', 0)}")
 
     click.echo("|   GPU(s):")
-    for i, gpu in enumerate(system_info['gpu'], 1):
+    for i, gpu in enumerate(system_info["gpu"], 1):
         click.echo(f"|     {i}: {gpu['product']}")
     # click.pause("Press any key to continue")
 
@@ -554,7 +560,9 @@ def cli(
                         arguments = command["args"]
                         arguments = arguments.format(
                             video_file=current_file,
-                            gpu=format_gpu_arg(hwi.platform.system(), gpus[gpu_idx], gpu_idx),
+                            gpu=format_gpu_arg(
+                                hwi.platform.system(), gpus[gpu_idx], gpu_idx
+                            ),
                         )
                         test_cmd = f"{ffmpeg_binary} {arguments}"
 
